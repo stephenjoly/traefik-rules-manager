@@ -68,3 +68,4 @@ jobs:
           build-args: |
             NODE_ENV=production
             APP_VERSION=${{ steps.build_version.outputs.app_version }}
+            ${{ matrix.name == 'frontend' && format('VITE_API_BASE={0}', env.FRONTEND_API_BASE || 'http://localhost:3001') || '' }}

@@ -9,6 +9,7 @@ services:
       - TRM_BACKUP_PATH=/config/backups
       - TRM_PORT=3001
       - TRM_HOST=0.0.0.0
+      - TRM_LOG_LEVEL=debug
     ports:
       - "3001:3001"
     volumes:
