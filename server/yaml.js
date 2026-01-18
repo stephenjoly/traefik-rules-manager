@@ -31,10 +31,11 @@ function buildLoadBalancer(rule) {
 
 export function generateTraefikYaml(rule) {
   const serviceName = rule.serviceName || rule.name;
+  const routerName = rule.routerName || rule.name;
   const config = {
     http: {
       routers: {
-        [rule.name]: {
+        [routerName]: {
           rule: `Host(\`${rule.hostname}\`)`,
           service: serviceName,
           entryPoints: rule.entryPoints,

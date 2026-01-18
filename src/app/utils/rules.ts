@@ -23,11 +23,12 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
 
     return {
       name: routerName,
+      routerName,
       serviceName,
       hostname: router?.rule ? extractHostname(router.rule) : rule.hostname,
       backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || rule.backendUrl || [],
       entryPoints: router?.entryPoints || rule.entryPoints || [],
-      tls: !!router?.tls ?? rule.tls,
+      tls: router?.tls ?? rule.tls,
       middlewares: middlewares.length ? middlewares : rule.middlewares,
       priority: router?.priority ?? rule.priority,
       certResolver: router?.tls?.certResolver ?? rule.certResolver,
@@ -40,6 +41,7 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
   } catch {
     return {
       name: rule.name,
+      routerName: rule.routerName || rule.name,
       serviceName: rule.serviceName || rule.name,
       hostname: rule.hostname,
       backendUrl: rule.backendUrl || [],
@@ -62,6 +64,7 @@ export function duplicateRule(rule: TraefikRule): RulePayload {
 }
 
 export function ruleToPayload(rule: TraefikRule, opts: { copyName?: boolean } = {}): RulePayload {
+  // Prefer filename base if present
   const baseName = rule.fileName ? rule.fileName.replace(/\.ya?ml$/i, '') : rule.name;
   const payload = normalizeRuleFromYaml(rule);
   const name = opts.copyName ? `${baseName}-copy` : baseName;

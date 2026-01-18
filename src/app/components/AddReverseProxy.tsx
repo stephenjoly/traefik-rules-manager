@@ -26,6 +26,7 @@ type AddReverseProxyProps = {
 
 type FormData = {
   name: string;
+  routerName: string;
   serviceName: string;
   hostname: string;
   backendUrl: string;
@@ -42,6 +43,7 @@ type FormData = {
 
 const DEFAULT_VALUES: FormData = {
   name: '',
+  routerName: '',
   serviceName: '',
   hostname: '',
   backendUrl: '',
@@ -85,6 +87,7 @@ export default function AddReverseProxy({
   const setFromPayload = (payload: RulePayload) => {
     reset({
       name: payload.name,
+      routerName: payload.routerName || payload.name,
       serviceName: payload.serviceName || payload.name,
       hostname: payload.hostname,
       backendUrl: '',
@@ -111,11 +114,16 @@ export default function AddReverseProxy({
     }
     if (initialValue) {
       setFromPayload(initialValue);
-    } else if (defaultTemplateId) {
-      const tmpl = templates.find(t => t.id === defaultTemplateId);
-      if (tmpl) setFromPayload(ruleToPayload(tmpl, { copyName: false }));
     }
   }, [initialValue, reset, defaultTemplateId, selectedTemplateId, templates]);
+
+  useEffect(() => {
+    if (!selectedTemplateId) return;
+    const tmpl = templates.find(t => t.id === selectedTemplateId);
+    if (tmpl) {
+      setFromPayload(ruleToPayload(tmpl, { copyName: false }));
+    }
+  }, [selectedTemplateId, templates]);
 
   const addBackend = () => {
     if (backendInput.trim() && !backends.includes(backendInput.trim())) {
@@ -175,6 +183,7 @@ export default function AddReverseProxy({
 
     const payload: RulePayload = {
       name: data.name,
+      routerName: data.routerName || data.name,
       serviceName: data.serviceName || data.name,
       hostname: data.hostname,
       backendUrl: backends,
@@ -214,6 +223,7 @@ export default function AddReverseProxy({
       const middlewares = router?.middlewares || [];
       const payload: RulePayload = {
         name: routerName,
+        routerName: routerName,
         serviceName: serviceName,
         hostname: router?.rule ? extractHostname(router.rule) : '',
         backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || [],
@@ -233,6 +243,7 @@ export default function AddReverseProxy({
       await onSave(payload);
       // populate form fields so user can switch to form mode with data filled
       setValue('name', payload.name);
+      setValue('routerName', payload.routerName || payload.name);
       setValue('serviceName', payload.serviceName || payload.name);
       setValue('hostname', payload.hostname);
       setBackends(payload.backendUrl);
@@ -257,6 +268,7 @@ export default function AddReverseProxy({
     const data = watch();
     const generated = generateYaml(
       data.name || 'my-service',
+      data.routerName || data.name || 'my-service',
       data.serviceName || data.name || 'my-service',
       data.hostname || '',
       backends,
@@ -288,6 +300,8 @@ export default function AddReverseProxy({
 
       const payload: RulePayload = {
         name: routerName,
+        routerName,
+        serviceName,
         hostname: router?.rule ? extractHostname(router.rule) : '',
         backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || [],
         entryPoints: router?.entryPoints || [],
@@ -303,6 +317,8 @@ export default function AddReverseProxy({
       };
 
       setValue('name', payload.name);
+      setValue('routerName', payload.routerName || payload.name);
+      setValue('serviceName', payload.serviceName || payload.name);
       setValue('hostname', payload.hostname);
       setBackends(payload.backendUrl);
       setEntryPoints(payload.entryPoints);
@@ -408,6 +424,22 @@ export default function AddReverseProxy({
                       )}
                     </div>
 
+                    {/* Router Name */}
+                    <div className="space-y-2">
+                      <Label htmlFor="routerName">Router Name</Label>
+                      <Input
+                        id="routerName"
+                        {...register('routerName', { 
+                          pattern: {
+                            value: /^[a-zA-Z0-9-_]*$/,
+                            message: 'Only alphanumeric characters, hyphens, and underscores allowed'
+                          }
+                        })}
+                        placeholder="my-app-router"
+                      />
+                      <p className="text-sm text-gray-500">Defaults to rule name if left empty.</p>
+                    </div>
+
                     {/* Service Name */}
                     <div className="space-y-2">
                       <Label htmlFor="serviceName">Service Name (optional)</Label>
@@ -424,9 +456,9 @@ export default function AddReverseProxy({
                       <p className="text-sm text-gray-500">Defaults to rule name if left empty.</p>
                     </div>
 
-                    {/* Hostnames */}
+                    {/* Hostname */}
                     <div className="space-y-2">
-                      <Label htmlFor="hostname">Hostnames *</Label>
+                      <Label htmlFor="hostname">Hostname *</Label>
                       <Input
                         id="hostname"
                         {...register('hostname', { required: 'Hostname is required' })}
@@ -774,6 +806,7 @@ export default function AddReverseProxy({
 
 function generateYaml(
   name: string,
+  routerName: string,
   serviceName: string,
   hostname: string,
   backends: string[],
@@ -834,7 +867,7 @@ function generateYaml(
   const config = {
     http: {
       routers: {
-        [name]: router,
+        [routerName || name]: router,
       },
       services: {
         [serviceName || name]: service,
@@ -848,6 +881,7 @@ function generateYaml(
 function generateDefaultYaml(): string {
   return generateYaml(
     DEFAULT_VALUES.name || 'my-service',
+    DEFAULT_VALUES.routerName || DEFAULT_VALUES.name || 'my-service',
     DEFAULT_VALUES.serviceName || DEFAULT_VALUES.name || 'my-service',
     DEFAULT_VALUES.hostname || 'example.com',
     [],
@@ -876,6 +910,7 @@ function extractHostname(rule: string): string {
 function generateYamlFromPayload(payload: RulePayload): string {
   return generateYaml(
     payload.name,
+    payload.routerName || payload.name,
     payload.serviceName || payload.name,
     payload.hostname,
     payload.backendUrl || [],

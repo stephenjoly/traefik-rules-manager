@@ -76,6 +76,31 @@
       "fileName": "grafana-rtr.yaml"
     },
     {
+      "id": "29fe64bc-aaa5-4f0b-9dd1-04911fb17c05",
+      "name": "memos-rtrdsa",
+      "serviceName": "memos-svcdas",
+      "hostname": "memodas.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5230"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    memos-rtrdsa:\n      rule: Host(`memodas.{{ env \"DOMAINNAME_1\" }}`)\n      service: memos-svcdas\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      tls:\n        certResolver: dns-cloudflare\n  services:\n    memos-svcdas:\n      loadBalancer:\n        servers:\n          - url: http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5230\n        serversTransport: memos\n        passHostHeader: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-18T04:06:55.512Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "serversTransport": "memos",
+      "fileName": "memos-rtrdsa.yaml"
+    },
+    {
       "id": "f89e6cb0-1bd1-45e7-8a96-9e6f90e9dc8b",
       "name": "opencloud-rtr",
       "serviceName": "opencloud-rtr",

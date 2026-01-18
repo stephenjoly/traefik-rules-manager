@@ -31,6 +31,7 @@ export default function App() {
   const [actionLoading, setActionLoading] = useState(false);
   const [autoConnectTried, setAutoConnectTried] = useState(false);
   const [draftRule, setDraftRule] = useState<RulePayload | null>(null);
+  const [draftTemplateId, setDraftTemplateId] = useState<string | undefined>(undefined);
 
   const mapRule = (rule: any): TraefikRule => ({
     ...rule,
@@ -82,6 +83,7 @@ export default function App() {
 
   const handleAddProxy = () => {
     setDraftRule(null);
+    setDraftTemplateId(undefined);
     setCurrentView('add');
   };
 
@@ -89,6 +91,7 @@ export default function App() {
     const baseName = rule.fileName ? rule.fileName.replace(/\.ya?ml$/i, '') : rule.name;
     setSelectedRule({ ...rule, name: baseName });
     setDraftRule(null);
+    setDraftTemplateId(undefined);
     setCurrentView('edit');
   };
 
@@ -114,6 +117,7 @@ export default function App() {
       const mapped = mapRule(created);
       setRules([...rules, mapped]);
       setCurrentView('dashboard');
+      setDraftTemplateId(undefined);
       toast.success(`Created new reverse proxy: ${mapped.name}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create rule';
@@ -131,6 +135,7 @@ export default function App() {
       const mapped = mapRule(updated);
       setRules(rules.map(r => r.id === mapped.id ? mapped : r));
       setCurrentView('dashboard');
+      setDraftTemplateId(undefined);
       toast.success(`Updated rule: ${mapped.name}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update rule';
@@ -144,6 +149,8 @@ export default function App() {
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
     setSelectedRule(null);
+    setDraftRule(null);
+    setDraftTemplateId(undefined);
   };
 
   const handleReload = async () => {
@@ -183,14 +190,14 @@ export default function App() {
       )}
 
       {currentView === 'add' && (
-        <AddReverseProxy
-          onSave={handleSaveNewProxy}
-          onCancel={handleBackToDashboard}
-          existingMiddlewares={existingMiddlewares}
-          templates={rules}
-          initialValue={draftRule || undefined}
-          defaultTemplateId={draftRule ? draftRule.name : undefined}
-        />
+      <AddReverseProxy
+        onSave={handleSaveNewProxy}
+        onCancel={handleBackToDashboard}
+        existingMiddlewares={existingMiddlewares}
+        templates={rules}
+        initialValue={draftRule || undefined}
+        defaultTemplateId={draftTemplateId}
+      />
       )}
 
       {currentView === 'edit' && selectedRule && (
@@ -201,6 +208,7 @@ export default function App() {
           existingMiddlewares={existingMiddlewares}
           onDuplicate={() => {
             setDraftRule(duplicateRule(selectedRule));
+            setDraftTemplateId(selectedRule.id);
             setCurrentView('add');
           }}
         />

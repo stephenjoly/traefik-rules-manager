@@ -79,11 +79,11 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Hostnames */}
+          {/* Hostname */}
           <div>
             <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
               <Globe className="w-4 h-4" />
-              <span>Hostnames</span>
+              <span>Hostname</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {rule.hostname.map((host, idx) => (

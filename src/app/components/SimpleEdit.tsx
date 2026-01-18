@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useEffect, useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Plus, X, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -19,6 +19,7 @@ type SimpleEditProps = {
 
 type FormData = {
   name: string;
+  routerName: string;
   serviceName: string;
   hostname: string;
   entryPoints: string;
@@ -42,6 +43,7 @@ export default function SimpleEdit({
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     defaultValues: {
       name: normalized.name,
+      routerName: normalized.routerName || normalized.name,
       serviceName: normalized.serviceName || normalized.name,
       hostname: normalized.hostname,
       entryPoints: normalized.entryPoints.join(','),
@@ -68,6 +70,7 @@ export default function SimpleEdit({
     const norm = normalizeRuleFromYaml(rule);
     reset({
       name: norm.name,
+      routerName: norm.routerName || norm.name,
       serviceName: norm.serviceName || norm.name,
       hostname: norm.hostname,
       entryPoints: norm.entryPoints.join(','),
@@ -131,6 +134,7 @@ export default function SimpleEdit({
 
     const payload: RulePayload = {
       name: data.name,
+      routerName: data.routerName || data.name,
       serviceName: data.serviceName || data.name,
       hostname: data.hostname,
       backendUrl: backends,
@@ -175,6 +179,22 @@ export default function SimpleEdit({
         )}
       </div>
 
+      {/* Router Name */}
+      <div className="space-y-2">
+        <Label htmlFor="routerName">Router Name</Label>
+        <Input
+          id="routerName"
+          {...register('routerName', { 
+            pattern: {
+              value: /^[a-zA-Z0-9-_]*$/,
+              message: 'Only alphanumeric characters, hyphens, and underscores allowed'
+            }
+          })}
+          placeholder="my-app-router"
+        />
+        <p className="text-sm text-gray-500">Defaults to rule name if left empty.</p>
+      </div>
+
       {/* Service Name */}
       <div className="space-y-2">
         <Label htmlFor="serviceName">Service Name</Label>
@@ -191,9 +211,9 @@ export default function SimpleEdit({
         <p className="text-sm text-gray-500">Defaults to rule name if left empty.</p>
       </div>
 
-      {/* Hostnames */}
+      {/* Hostname */}
       <div className="space-y-2">
-        <Label htmlFor="hostname">Hostnames</Label>
+        <Label htmlFor="hostname">Hostname</Label>
         <Input
           id="hostname"
           {...register('hostname', { required: 'Hostname is required' })}

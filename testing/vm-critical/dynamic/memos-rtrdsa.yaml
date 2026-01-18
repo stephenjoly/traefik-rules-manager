@@ -1,0 +1,18 @@
+http:
+  routers:
+    memos-rtrdsa:
+      rule: Host(`memodas.{{ env "DOMAINNAME_1" }}`)
+      service: memos-svcdas
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      tls:
+        certResolver: dns-cloudflare
+  services:
+    memos-svcdas:
+      loadBalancer:
+        servers:
+          - url: http://{{ env "SERVERIP_DEVELOPMENT" }}:5230
+        serversTransport: memos
+        passHostHeader: true

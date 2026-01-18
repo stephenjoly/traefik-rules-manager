@@ -11,6 +11,7 @@ const ruleSchema = {
   properties: {
     id: { type: 'string' },
     name: { type: 'string', pattern: '^[a-zA-Z0-9-_]+$' },
+    routerName: { type: 'string', pattern: '^[a-zA-Z0-9-_]+$' },
     serviceName: { type: 'string', pattern: '^[a-zA-Z0-9-_]+$' },
     hostname: { type: 'string', minLength: 1 },
     backendUrl: {

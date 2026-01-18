@@ -72,12 +72,31 @@ export default function Dashboard({
       : <ArrowDown className="w-3 h-3 ml-1 inline" />;
   };
 
-  const filteredRules = rules
-    .filter(
-      (rule) =>
-        rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (rule.hostname && String(rule.hostname).toLowerCase().includes(searchQuery.toLowerCase()))
-    )
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
+
+  // Deduplicate by id to avoid accidental duplicates from upstream state updates
+  const uniqueRules = Array.from(
+    new Map(rules.map((rule) => [rule.id, rule])).values()
+  );
+
+  const filteredRules = (queryTerms.length ? uniqueRules.filter((rule) => {
+    const fields = [
+      rule.name,
+      rule.fileName,
+      rule.routerName,
+      rule.serviceName,
+      rule.hostname,
+      ...(rule.backendUrl || []),
+      ...(rule.entryPoints || []),
+      ...(rule.middlewares || []),
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase());
+
+    return queryTerms.every((term) => fields.some((field) => field.includes(term)));
+  }) : uniqueRules)
+    .slice()
     .sort((a, b) => {
       let comparison = 0;
       
@@ -98,6 +117,11 @@ export default function Dashboard({
           break;
       }
       
+      // Stable-ish tie-breaker to avoid shuffling on equal values
+      if (comparison === 0) {
+        comparison = a.id.localeCompare(b.id);
+      }
+
       return sortDirection === 'asc' ? comparison : -comparison;
     });
 
