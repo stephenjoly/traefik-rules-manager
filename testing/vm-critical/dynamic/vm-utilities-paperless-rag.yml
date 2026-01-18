@@ -1,0 +1,24 @@
+http:
+  routers:
+    paperless-rag-rtr:
+      rule: 'Host(`paperless-rag.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: paperless-rag-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    paperless-rag-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "paperless-rag"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:8975'
+
+  serversTransports:
+    paperless-rag:
+      insecureSkipVerify: true

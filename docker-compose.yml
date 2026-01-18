@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+  trm:
+    build: .
+    container_name: trm
+    restart: unless-stopped
+    environment:
+      - TRAEFIK_DYNAMIC_CONFIG_PATH=/config/dynamic
+      - TRM_METADATA_PATH=/config/metadata
+      - TRM_BACKUP_PATH=/config/backups
+      - TRM_PORT=3001
+      - TRM_HOST=0.0.0.0
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./traefik/dynamic:/config/dynamic
+      - ./trm/metadata:/config/metadata
+      - ./trm/backups:/config/backups

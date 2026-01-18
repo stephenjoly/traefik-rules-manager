@@ -1,0 +1,24 @@
+http:
+  routers:
+    grafana-rtr:
+      rule: 'Host(`grafana.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: grafana-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    grafana-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "grafana"
+        servers:
+          - url: 'http://{{ env "SERVERIP_CRITICAL" }}:9823'
+
+  serversTransports:
+    grafana:
+      insecureSkipVerify: true

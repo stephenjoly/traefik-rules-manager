@@ -1,0 +1,24 @@
+http:
+  routers:
+    archivebox-rtr:
+      rule: 'Host(`archivebox.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: archivebox-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    archivebox-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "archivebox"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:7998'
+
+  serversTransports:
+    archivebox:
+      insecureSkipVerify: true

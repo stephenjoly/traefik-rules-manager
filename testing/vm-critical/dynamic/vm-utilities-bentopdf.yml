@@ -1,0 +1,24 @@
+http:
+  routers:
+    bento-rtr:
+      rule: 'Host(`bento.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia-nozip
+      service: bento-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    bento-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "bento"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:3030'
+
+  serversTransports:
+    bento:
+      insecureSkipVerify: true

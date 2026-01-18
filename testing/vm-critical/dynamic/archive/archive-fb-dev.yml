@@ -1,0 +1,24 @@
+http:
+  routers:
+    fb-dev-rtr:
+      rule: 'Host(`fb-dev.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: fb-dev-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    fb-dev-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "fb-dev"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:8095'
+
+  serversTransports:
+    fb-dev:
+      insecureSkipVerify: true

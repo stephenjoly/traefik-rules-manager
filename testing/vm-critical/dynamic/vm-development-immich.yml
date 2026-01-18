@@ -1,0 +1,24 @@
+http:
+  routers:
+    immich-rtr:
+      rule: 'Host(`immich.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+      #   - chain-no-auth-nozip
+      service: immich-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    immich-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "immich"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:2283'
+
+  serversTransports:
+    immich:
+      insecureSkipVerify: true

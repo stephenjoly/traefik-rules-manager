@@ -27,6 +27,7 @@ type FormData = {
   stickySession: boolean;
   healthCheckPath: string;
   healthCheckInterval: string;
+  serversTransport: string;
 };
 
 export default function SimpleEdit({
@@ -47,6 +48,7 @@ export default function SimpleEdit({
       stickySession: rule.stickySession || false,
       healthCheckPath: rule.healthCheckPath || '',
       healthCheckInterval: rule.healthCheckInterval || '',
+      serversTransport: rule.serversTransport || '',
     },
   });
 
@@ -114,7 +116,8 @@ export default function SimpleEdit({
       stickySession: data.stickySession,
       healthCheckPath: data.healthCheckPath,
       healthCheckInterval: data.healthCheckInterval,
-      middlewares: selectedMiddlewares
+      middlewares: selectedMiddlewares,
+      serversTransport: data.serversTransport || undefined
     };
 
     setSaving(true);

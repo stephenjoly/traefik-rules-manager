@@ -1,0 +1,24 @@
+http:
+  routers:
+    genai-rtr:
+      rule: 'Host(`genai.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+      #   - chain-no-auth-nozip.yml
+      service: genai-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    genai-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "genai"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:3005'
+
+  serversTransports:
+    genai:
+      insecureSkipVerify: true

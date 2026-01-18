@@ -1,0 +1,24 @@
+http:
+  routers:
+    pastebin-rtr:
+      rule: 'Host(`pastebin.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: pastebin-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    pastebin-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "pastebin"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:8007'
+
+  serversTransports:
+    pastebin:
+      insecureSkipVerify: true

@@ -17,6 +17,7 @@ export type TraefikRule = {
   stickySession?: boolean;
   healthCheckPath?: string;
   healthCheckInterval?: string;
+  serversTransport?: string;
 };
 
 export type RulePayload = {
@@ -32,4 +33,5 @@ export type RulePayload = {
   stickySession?: boolean;
   healthCheckPath?: string;
   healthCheckInterval?: string;
+  serversTransport?: string;
 };

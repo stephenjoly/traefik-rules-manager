@@ -2,6 +2,8 @@ import { config } from './config.js';
 import { createLogger } from './logger.js';
 import { createApp, startFileWatcher } from './app.js';
 
+const log = createLogger(config.logLevel);
+
 async function start() {
   const app = await createApp();
   startFileWatcher();
@@ -12,6 +14,6 @@ async function start() {
 }
 
 start().catch(err => {
-  createLogger(config.logLevel).error('Failed to start server', { error: err.message, stack: err.stack });
+  log.error('Failed to start server', { error: err.message, stack: err.stack });
   process.exit(1);
 });

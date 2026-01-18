@@ -5,6 +5,10 @@ function buildLoadBalancer(rule) {
     servers: rule.backendUrl.map(url => ({ url }))
   };
 
+  if (rule.serversTransport) {
+    loadBalancer.serversTransport = rule.serversTransport;
+  }
+
   if (rule.passHostHeader !== undefined) {
     loadBalancer.passHostHeader = rule.passHostHeader;
   }

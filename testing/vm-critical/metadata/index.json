@@ -1,0 +1,1544 @@
+{
+  "rules": [
+    {
+      "id": "e6e50c01-31fd-4920-aa1b-4e090fcae4ab",
+      "name": "api",
+      "hostname": "api.vm.local",
+      "backendUrl": [
+        "http://10.0.0.20:9000"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    api:\n      rule: Host(`api.vm.local`)\n      service: api\n      entryPoints:\n        - websecure\n      priority: 50\n      tls: {}\n  services:\n    api:\n      loadBalancer:\n        servers:\n          - url: http://10.0.0.20:9000\n        passHostHeader: false\n        sticky:\n          cookie:\n            name: sticky\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-17T23:59:34.586Z",
+      "priority": 50,
+      "passHostHeader": false,
+      "stickySession": true,
+      "fileName": "api.yaml"
+    },
+    {
+      "id": "ce223f9e-1b2e-4b8b-86af-2e1d04dabb08",
+      "name": "app",
+      "hostname": "app.vm.local",
+      "backendUrl": [
+        "http://10.0.0.10:8080",
+        "http://10.0.0.11:8080"
+      ],
+      "entryPoints": [
+        "web",
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "compress"
+      ],
+      "yamlContent": "http:\n  routers:\n    app:\n      rule: Host(`app.vm.local`)\n      service: app\n      entryPoints:\n        - web\n        - websecure\n      middlewares:\n        - compress\n      tls:\n        certResolver: letsencrypt\n  services:\n    app:\n      loadBalancer:\n        servers:\n          - url: http://10.0.0.10:8080\n          - url: http://10.0.0.11:8080\n        passHostHeader: true\n        healthCheck:\n          path: /health\n          interval: 30s\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-17T23:59:38.548Z",
+      "certResolver": "letsencrypt",
+      "passHostHeader": true,
+      "stickySession": false,
+      "healthCheckPath": "/health",
+      "healthCheckInterval": "30s",
+      "fileName": "app.yaml"
+    },
+    {
+      "id": "f3aeb9ba-36f7-46cb-b735-1f063ddecc58",
+      "name": "asustor-rtr",
+      "hostname": "asus.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://{{ env \"SERVERIP_NAS\" }}:1739"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    asustor-rtr:\n      rule: 'Host(`asus.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n        # - chain-internal\n      service: asustor-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    asustor-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"asus\"\n        servers:\n          - url: 'https://{{ env \"SERVERIP_NAS\" }}:1739'\n\n  serversTransports:\n    asus:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-26T11:01:50.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "rule-asustor.yml"
+    },
+    {
+      "id": "13703a10-350d-45d0-9f3e-0f056e2ab045",
+      "name": "homeassistant-rtr",
+      "hostname": "homeassistant.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://10.87.111.56:8123"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    homeassistant-rtr:\n      rule: 'Host(`homeassistant.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: homeassistant-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    homeassistant-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"homeassistant\"\n        servers:\n          - url: 'http://10.87.111.56:8123'\n\n  serversTransports:\n    homeassistant:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-03-01T06:16:04.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "rule-homeassistant.yml"
+    },
+    {
+      "id": "3be31197-ccef-47a6-99f1-d7b199be2f33",
+      "name": "pbs-rtr",
+      "hostname": "pbs.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://10.87.111.240:8007"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    pbs-rtr:\n      rule: 'Host(`pbs.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: pbs-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    pbs-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"pbs\"\n        servers:\n          - url: 'https://10.87.111.240:8007'\n\n  serversTransports:\n    pbs:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-03-19T16:00:30.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "rule-pbs.yml"
+    },
+    {
+      "id": "7b8001ec-18a1-4ad9-9f75-3a990d817994",
+      "name": "pihole-rtr",
+      "hostname": "pihole.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://10.87.111.239/"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    pihole-rtr:\n      rule: 'Host(`pihole.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      service: pihole-svc\n      tls:\n        certResolver: dns-cloudflare\n\n  services:\n    pihole-svc:\n      loadBalancer:\n        servers:\n          - url: 'https://10.87.111.239/'",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-26T06:00:10.000Z",
+      "certResolver": "dns-cloudflare",
+      "stickySession": false,
+      "fileName": "rule-pihole.yml"
+    },
+    {
+      "id": "7640f63d-5161-40d9-aecd-8ea4504280ad",
+      "name": "proxmox-rtr",
+      "hostname": "pve.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://10.87.111.241:8006"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    proxmox-rtr:\n      rule: 'Host(`pve.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: proxmox-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    proxmox-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"pve\"\n        servers:\n          - url: 'https://10.87.111.241:8006'\n\n  serversTransports:\n    pve:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:17:22.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "rule-proxmox-cluster.yml"
+    },
+    {
+      "id": "ae3ddf9e-009a-4e2c-aa31-8c2fd2fec8d7",
+      "name": "authelia-rtr",
+      "hostname": "auth.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:9091"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    authelia-rtr:\n      rule: 'Host(`auth.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: authelia-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    authelia-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"authelia\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:9091'\n\n  serversTransports:\n    authelia:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:17:08.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-critical-authelia.yml"
+    },
+    {
+      "id": "b8dd0dfa-10c3-475d-9097-366763f221ad",
+      "name": "grafana-rtr",
+      "hostname": "grafana.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:9823"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    grafana-rtr:\n      rule: 'Host(`grafana.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: grafana-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    grafana-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"grafana\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:9823'\n\n  serversTransports:\n    grafana:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-13T08:16:32.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-critical-grafana.yml"
+    },
+    {
+      "id": "eb2b544a-2add-48bf-a056-75bece8f9315",
+      "name": "influxdb-rtr",
+      "hostname": "influx.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:6580"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    influxdb-rtr:\n      rule: 'Host(`influx.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: influxdb-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    influxdb-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"influxdb\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:6580'\n\n  serversTransports:\n    influxdb:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:17:14.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-critical-influxdb.yml"
+    },
+    {
+      "id": "a8445434-0d0c-4460-8738-023a72fbf0ce",
+      "name": "portainer-rtr",
+      "hostname": "portainer.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:9000"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    portainer-rtr:\n      rule: 'Host(`portainer.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: portainer-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    portainer-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"portainer\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:9000'\n\n  serversTransports:\n    portainer:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-30T18:00:52.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-critical-portainer.yml"
+    },
+    {
+      "id": "0665a1a3-05d1-4563-a960-b09eb6a06841",
+      "name": "prometheus-rtr",
+      "hostname": "prometheus.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:9090"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    prometheus-rtr:\n      rule: 'Host(`prometheus.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: prometheus-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    prometheus-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"prometheus\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:9090'\n\n  serversTransports:\n    prometheus:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:17:42.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-critical-prometheus.yml"
+    },
+    {
+      "id": "d5e08e05-ed23-4768-9520-600e536ec006",
+      "name": "traefik-rtr",
+      "hostname": "traefik.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:8080"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    traefik-rtr:\n      rule: 'Host(`traefik.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: traefik-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    traefik-svc:\n      loadBalancer:\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:8080'",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:17:36.000Z",
+      "certResolver": "dns-cloudflare",
+      "stickySession": false,
+      "fileName": "vm-critical-traefik-db.yml"
+    },
+    {
+      "id": "165a12ba-8716-4412-8e87-a7a467161c67",
+      "name": "uptime-rtr",
+      "hostname": "uptime.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:3001"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    uptime-rtr:\n      rule: 'Host(`uptime.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: uptime-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    uptime-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"uptime\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:3001'\n\n  serversTransports:\n    uptime:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:16:30.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-critical-uptime-kuma.yml"
+    },
+    {
+      "id": "47c2cbe7-df97-485e-865d-e06dfbbbe4fd",
+      "name": "vaultwarden-rtr",
+      "hostname": "vault.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:4595"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    vaultwarden-rtr:\n      rule: 'Host(`vault.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: vaultwarden-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    vaultwarden-svc:\n      loadBalancer:\n        # passHostHeader: true\n        # serversTransport: \"vaultwarden\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_CRITICAL\" }}:4595'\n\n  # serversTransports:\n  #   vaultwarden:\n  #     insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T21:01:00.000Z",
+      "certResolver": "dns-cloudflare",
+      "stickySession": false,
+      "fileName": "vm-critical-vaultwarden.yml"
+    },
+    {
+      "id": "75792c0f-1f7c-46f5-ab0e-5f12c585d8bf",
+      "name": "archivebox-rtr",
+      "hostname": "archivebox.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:7998"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    archivebox-rtr:\n      rule: 'Host(`archivebox.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: archivebox-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    archivebox-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"archivebox\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:7998'\n\n  serversTransports:\n    archivebox:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-30T18:17:00.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-archivebox.yml"
+    },
+    {
+      "id": "add4d361-89a1-4fc0-a325-ab27bfe4d276",
+      "name": "capso-rtr",
+      "hostname": "capso.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1003"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    capso-rtr:\n      rule: 'Host(`capso.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: capso-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    capso-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"capso\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1003'\n\n  serversTransports:\n    capso:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-23T03:16:00.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-capso.yml"
+    },
+    {
+      "id": "35f80d59-f96c-4bf5-a98d-34b820a3f625",
+      "name": "changedetection-rtr",
+      "hostname": "changedetection.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5000"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    changedetection-rtr:\n      rule: 'Host(`changedetection.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: changedetection-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    changedetection-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"changedetection\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5000'\n\n  serversTransports:\n    changedetection:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-30T17:17:48.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-changedetection.yml"
+    },
+    {
+      "id": "13e127c6-de98-4861-9963-e971c0cee0f7",
+      "name": "ghost-rtr",
+      "hostname": "ghost.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8282"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    ghost-rtr:\n      rule: 'Host(`ghost.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: ghost-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    ghost-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"ghost\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8282'\n\n  serversTransports:\n    ghost:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-02-04T00:00:18.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-ghost.yml"
+    },
+    {
+      "id": "63a27b01-b6b7-46ab-b878-931c07b31f6d",
+      "name": "gokapi-rtr",
+      "hostname": "gokapi.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://{{ env \"SERVERIP_DEVELOPMENT\" }}:53842"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    gokapi-rtr:\n      rule: 'Host(`gokapi.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth-nozip\n      service: gokapi-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    gokapi-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"gokapi\"\n        servers:\n          - url: 'https://{{ env \"SERVERIP_DEVELOPMENT\" }}:53842'\n\n  serversTransports:\n    gokapi:\n      insecureSkipVerify: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-28T05:01:58.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-gokapi.yml"
+    },
+    {
+      "id": "97119b0d-b8d0-491a-9f0a-c3de5dfa7cdf",
+      "name": "grist-rtr",
+      "hostname": "grist.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8484"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    grist-rtr:\n      rule: 'Host(`grist.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: grist-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    grist-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"grist\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8484'\n\n  serversTransports:\n    grist:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-02-04T00:00:32.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-grist.yml"
+    },
+    {
+      "id": "fc7be624-b0c6-4a06-8a7c-981ecb21a6f4",
+      "name": "guacamole-rtr",
+      "hostname": "guacamole.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8020"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    guacamole-rtr:\n      rule: 'Host(`guacamole.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: guacamole-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    guacamole-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"guacamole\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8020'\n\n  serversTransports:\n    guacamole:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-02T06:16:52.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-guacamole.yml"
+    },
+    {
+      "id": "e8dba761-13f9-4071-9b24-ccb2278e7864",
+      "name": "immich-rtr",
+      "hostname": "immich.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:2283"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    immich-rtr:\n      rule: 'Host(`immich.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-no-auth-nozip\n      service: immich-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    immich-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"immich\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:2283'\n\n  serversTransports:\n    immich:\n      insecureSkipVerify: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-31T02:00:50.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-immich.yml"
+    },
+    {
+      "id": "37652c2a-7afa-44a5-bb4d-6665e2f32149",
+      "name": "kaneo-api-rtr",
+      "hostname": "kaneo-api.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1337"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    kaneo-api-rtr:\n      rule: 'Host(`kaneo-api.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-no-auth\n      service: kaneo-api-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    kaneo-api-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"kaneo-api\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1337'\n\n  serversTransports:\n    kaneo-api:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-28T08:00:08.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-kaneo-api.yml"
+    },
+    {
+      "id": "4a2e252f-77ad-403a-ad24-8c31ffe985f5",
+      "name": "kaneo-rtr",
+      "hostname": "kaneo.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5173"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    kaneo-rtr:\n      rule: 'Host(`kaneo.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-no-auth\n      service: kaneo-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    kaneo-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"kaneo\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5173'\n\n  serversTransports:\n    kaneo:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-28T06:00:16.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-kaneo.yml"
+    },
+    {
+      "id": "2e492e75-52fc-4f22-9c25-7592b35b888d",
+      "name": "memos-rtr",
+      "hostname": "memos.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5230"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    memos-rtr:\n      rule: 'Host(`memos.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: memos-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    memos-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"memos\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5230'\n\n  serversTransports:\n    memos:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-02-04T00:01:44.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-memos.yml"
+    },
+    {
+      "id": "690c034e-7070-4d91-90a1-7103727311c0",
+      "name": "minio-rtr",
+      "hostname": "minio.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:43077"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    minio-rtr:\n      rule: 'Host(`minio.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: minio-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    minio-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"minio\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:43077'\n\n  serversTransports:\n    minio:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-30T09:17:50.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-minio.yml"
+    },
+    {
+      "id": "e12d9aae-ef88-46a0-a17d-f04b6fa13fcb",
+      "name": "opencloud-rtr",
+      "hostname": "opencloud.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9203"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    opencloud-rtr:\n      rule: 'Host(`opencloud.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-authelia-nozip\n      service: opencloud-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    opencloud-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"opencloud\"\n        servers:\n          - url: 'https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9203'\n\n  serversTransports:\n    opencloud:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-12T07:00:26.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-opencloud.yml"
+    },
+    {
+      "id": "92bbf058-659a-468d-8abe-9f15be3003ee",
+      "name": "termix-rtr",
+      "hostname": "termix.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:9123"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    termix-rtr:\n      rule: 'Host(`termix.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: termix-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    termix-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"termix\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:9123'\n\n  serversTransports:\n    termix:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-26T03:00:32.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-development-termix.yml"
+    },
+    {
+      "id": "98a44fd2-2bd6-4bb3-be3e-60097ca4d5e4",
+      "name": "bazarr-rtr",
+      "hostname": "bazarr.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:6767"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    bazarr-rtr:\n      rule: 'Host(`bazarr.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: bazarr-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    bazarr-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"bazarr\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:6767'\n\n  serversTransports:\n    bazarr:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:10.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-bazarr.yml"
+    },
+    {
+      "id": "755b2336-13d2-4138-b9e7-f7b744615009",
+      "name": "jellyseerr-rtr",
+      "hostname": "jellyseerr.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:5055"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    jellyseerr-rtr:\n      rule: 'Host(`jellyseerr.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: jellyseerr-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    jellyseerr-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"jellyseerr\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:5055'\n\n  serversTransports:\n    jellyseerr:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-03-24T16:00:00.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-jellyserr.yml"
+    },
+    {
+      "id": "10311382-e665-4f83-9146-ebd0f58ea0af",
+      "name": "metube-rtr",
+      "hostname": "metube.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8081"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    metube-rtr:\n      rule: 'Host(`metube.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: metube-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    metube-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"metube\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8081'\n\n  serversTransports:\n    metube:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:00:56.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-metube.yml"
+    },
+    {
+      "id": "7086441f-9641-446d-bb45-6b8247f0d4f4",
+      "name": "pbittorrent-rtr",
+      "hostname": "pbittorrent.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8086"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    pbittorrent-rtr:\n      rule: 'Host(`pbittorrent.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: pbittorrent-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    pbittorrent-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"pbittorrent\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8086'\n\n  serversTransports:\n    pbittorrent:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:26.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-pbittorrent.yml"
+    },
+    {
+      "id": "10f148cf-d539-4b95-939f-0fde92d4d6bb",
+      "name": "pinchflat-rtr",
+      "hostname": "pinchflat.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8945"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    pinchflat-rtr:\n      rule: 'Host(`pinchflat.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: pinchflat-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    pinchflat-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"pinchflat\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8945'\n\n  serversTransports:\n    pinchflat:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:00:48.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-pinchflat.yml"
+    },
+    {
+      "id": "36f501da-3258-43bb-8386-90fa48176be0",
+      "name": "prowlarr-rtr",
+      "hostname": "prowlarr.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:9696"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    prowlarr-rtr:\n      rule: 'Host(`prowlarr.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: prowlarr-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    prowlarr-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"prowlarr\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:9696'\n\n  serversTransports:\n    prowlarr:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:06.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-prowlarr.yml"
+    },
+    {
+      "id": "19fdeaf4-cdfc-4b91-8f0d-7f13398d9276",
+      "name": "qbittorrent-rtr",
+      "hostname": "qbittorrent.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8085"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    qbittorrent-rtr:\n      rule: 'Host(`qbittorrent.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: qbittorrent-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    qbittorrent-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"qbittorrent\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8085'\n\n  serversTransports:\n    qbittorrent:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:20.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-qbittorrent.yml"
+    },
+    {
+      "id": "e69fb056-d1e8-4a90-b7b7-ed1a6945758b",
+      "name": "radarr-rtr",
+      "hostname": "radarr.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:7878"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    radarr-rtr:\n      rule: 'Host(`radarr.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: radarr-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    radarr-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"radarr\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:7878'\n\n  serversTransports:\n    radarr:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:16.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-radarr.yml"
+    },
+    {
+      "id": "d0bd037c-5c97-4b1d-b74b-4cc55cce9244",
+      "name": "rbittorrent-rtr",
+      "hostname": "rbittorrent.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8087"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    rbittorrent-rtr:\n      rule: 'Host(`rbittorrent.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: rbittorrent-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    rbittorrent-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"rbittorrent\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8087'\n\n  serversTransports:\n    rbittorrent:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:00:42.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-rbittorrent.yml"
+    },
+    {
+      "id": "afef07a8-643b-435f-9306-aa84bbeb2181",
+      "name": "readarr-rtr",
+      "hostname": "readarr.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8787"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    readarr-rtr:\n      rule: 'Host(`readarr.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: readarr-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    readarr-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"readarr\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8787'\n\n  serversTransports:\n    readarr:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:36.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-readarr.yml"
+    },
+    {
+      "id": "7107c30f-cf02-431f-b6e1-9421c4d3a9b2",
+      "name": "sonarr-rtr",
+      "hostname": "sonarr.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_MEDIA\" }}:8989"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    sonarr-rtr:\n      rule: 'Host(`sonarr.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: sonarr-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    sonarr-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"sonarr\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_MEDIA\" }}:8989'\n\n  serversTransports:\n    sonarr:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-01-29T20:01:32.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-download-sonarr.yml"
+    },
+    {
+      "id": "4b02379f-41b4-49ad-bb6d-2a6d47cc4e6d",
+      "name": "landing-page-rtr",
+      "hostname": "{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:2001"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    landing-page-rtr:\n      rule: 'Host(`{{ env \"DOMAINNAME_1\" }}`) || Host(`www.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: landing-page-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n    # HTTP router (for redirection)\n    landing-page-rtr-http:\n      rule: 'Host(`{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - web\n      middlewares:\n        - https-redirect\n      service: landing-page-svc\n\n  services:\n    landing-page-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"landing-page\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:2001'\n\n  serversTransports:\n    landing-page:\n      insecureSkipVerify: true\n\n  \n  middlewares:\n    https-redirect:\n      redirectScheme:\n        scheme: https\n        permanent: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:16:46.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-landing-page.yml"
+    },
+    {
+      "id": "02c56b3e-4fb1-4f17-8612-b430065c89f0",
+      "name": "landing-page-rtr-http",
+      "hostname": "{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:2001"
+      ],
+      "entryPoints": [
+        "web"
+      ],
+      "tls": false,
+      "middlewares": [
+        "https-redirect"
+      ],
+      "yamlContent": "http:\n  routers:\n    landing-page-rtr:\n      rule: 'Host(`{{ env \"DOMAINNAME_1\" }}`) || Host(`www.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: landing-page-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n    # HTTP router (for redirection)\n    landing-page-rtr-http:\n      rule: 'Host(`{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - web\n      middlewares:\n        - https-redirect\n      service: landing-page-svc\n\n  services:\n    landing-page-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"landing-page\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:2001'\n\n  serversTransports:\n    landing-page:\n      insecureSkipVerify: true\n\n  \n  middlewares:\n    https-redirect:\n      redirectScheme:\n        scheme: https\n        permanent: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:16:46.000Z",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-landing-page.yml"
+    },
+    {
+      "id": "db36b4cb-8153-4b18-a215-e1b6368b52a7",
+      "name": "money-99-savior-rtr",
+      "hostname": "money-99-savior.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:5000"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    money-99-savior-rtr:\n      rule: 'Host(`money-99-savior.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: money-99-savior-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    money-99-savior-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"money-99-savior\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:5000'\n\n  serversTransports:\n    money-99-savior:\n      insecureSkipVerify: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:16:52.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-money-99-savior.yml"
+    },
+    {
+      "id": "a2d340ce-a33d-43e6-b5f2-f33dc1aba6c8",
+      "name": "n8n-rtr",
+      "hostname": "n8n.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:5678"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "n8n-headers"
+      ],
+      "yamlContent": "http:\n  routers:\n    n8n-rtr:\n      rule: 'Host(`n8n.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - n8n-headers  # Add this middleware\n      service: n8n-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  middlewares:\n    n8n-headers:\n      headers:\n        customRequestHeaders:\n          X-Forwarded-Proto: \"https\"\n          X-Forwarded-For: \"\"\n        customResponseHeaders:\n          X-Frame-Options: \"SAMEORIGIN\"\n\n  services:\n    n8n-svc:\n      loadBalancer:\n        passHostHeader: true\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:5678'\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:16:54.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-n8n.yml"
+    },
+    {
+      "id": "e1b778db-2efd-470e-a320-1b27ee6a666f",
+      "name": "plausible-rtr",
+      "hostname": "plausible.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:808"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    plausible-rtr:\n      rule: 'Host(`plausible.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      service: plausible-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    plausible-svc:\n      loadBalancer:\n        passHostHeader: true\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:808'\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:16:58.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-plausible.yml"
+    },
+    {
+      "id": "09b861e4-3705-429c-b5cb-b94dd5156b24",
+      "name": "pocketbase-rtr",
+      "hostname": "pocketbase.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:8800"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    pocketbase-rtr:\n      rule: 'Host(`pocketbase.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-authelia\n      service: pocketbase-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    pocketbase-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"pocketbase\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:8800'\n\n  serversTransports:\n    pocketbase:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:17:02.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-pocketbase.yml"
+    },
+    {
+      "id": "085ea749-3576-463a-ae38-1a2d1ba961b8",
+      "name": "onetable-rtr",
+      "hostname": "onetable.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_PRODUCTION\" }}:1001"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    onetable-rtr:\n      rule: 'Host(`onetable.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: onetable-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    onetable-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"onetable\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_PRODUCTION\" }}:1001'\n\n  serversTransports:\n    onetable:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:17:00.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-production-thought-record.yml"
+    },
+    {
+      "id": "5c973fa1-8b70-4d06-b580-bfff3788b74c",
+      "name": "audiobookshelf-rtr",
+      "hostname": "audiobookshelf.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_STREAMING\" }}:13378"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    audiobookshelf-rtr:\n      rule: 'Host(`audiobookshelf.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth-nozip\n      service: audiobookshelf-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    audiobookshelf-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"audiobookshelf\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_STREAMING\" }}:13378'\n\n  serversTransports:\n    audiobookshelf:\n      insecureSkipVerify: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-12-28T19:17:02.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-streaming-audiobookshelf.yml"
+    },
+    {
+      "id": "74930b9e-8b2a-4ed1-86a1-436e409e8fc4",
+      "name": "jellyfin-rtr",
+      "hostname": "jolyfin.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_STREAMING\" }}:8096"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    jellyfin-rtr:\n      rule: 'Host(`jolyfin.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n#      middlewares:\n#        - chain-no-auth\n      service: jellyfin-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    jellyfin-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"jellyfin\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_STREAMING\" }}:8096'\n\n  serversTransports:\n    jellyfin:\n      insecureSkipVerify: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2025-05-18T22:17:04.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-streaming-jellyfin.yml"
+    },
+    {
+      "id": "0f0d2811-0132-40b6-bdc7-07edc77cb700",
+      "name": "actualbudget-rtr",
+      "hostname": "actual.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:5006"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    actualbudget-rtr:\n      rule: 'Host(`actual.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: actualbudget-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    actualbudget-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"actualbudget\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:5006'\n\n  serversTransports:\n    actualbudget:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:01:04.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-actualbudget.yml"
+    },
+    {
+      "id": "288970f0-f17d-4d8e-9640-c528eb511afb",
+      "name": "bento-rtr",
+      "hostname": "bento.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:3030"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    bento-rtr:\n      rule: 'Host(`bento.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: bento-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    bento-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"bento\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:3030'\n\n  serversTransports:\n    bento:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:34.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-bentopdf.yml"
+    },
+    {
+      "id": "252175a4-f898-49cb-b962-596c0dfcf33b",
+      "name": "beszel-rtr",
+      "hostname": "beszel.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:8090"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    beszel-rtr:\n      rule: 'Host(`beszel.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: beszel-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    beszel-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"beszel\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:8090'\n\n  serversTransports:\n    beszel:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:24.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-beszel-hub.yml"
+    },
+    {
+      "id": "dda4f798-550d-4511-9c75-07c7ef5a8138",
+      "name": "bichon-rtr",
+      "hostname": "bichon.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:15630"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    bichon-rtr:\n      rule: 'Host(`bichon.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: bichon-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    bichon-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"bichon\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_DEVELOPMENT\" }}:15630'\n\n  serversTransports:\n    bichon:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-12T05:00:40.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-bichon.yml"
+    },
+    {
+      "id": "e6ddef58-5899-4f87-9892-9d97582b8719",
+      "name": "databasus-rtr",
+      "hostname": "databasus.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:4005"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    databasus-rtr:\n      rule: 'Host(`databasus.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: databasus-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    databasus-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"databasus\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:4005'\n\n  serversTransports:\n    databasus:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:42.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-databasus.yml"
+    },
+    {
+      "id": "21b91d81-3e46-4202-97e2-e48ccacc867a",
+      "name": "dawarich-rtr",
+      "hostname": "dawarich.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:5656"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    dawarich-rtr:\n      rule: 'Host(`dawarich.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: dawarich-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    dawarich-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"dawarich\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:5656'\n\n  serversTransports:\n    dawarich:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:46.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-dawarich.yml"
+    },
+    {
+      "id": "56315707-2e48-437c-93f8-51356742b8f2",
+      "name": "firefox-rtr",
+      "hostname": "firefox.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:5800"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    firefox-rtr:\n      rule: 'Host(`firefox.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: firefox-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    firefox-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"firefox\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:5800'\n\n  serversTransports:\n    firefox:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:52.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-firefox.yml"
+    },
+    {
+      "id": "d9560f4b-ff9c-4ae7-972c-72daf34fa085",
+      "name": "gmailcleaner-rtr",
+      "hostname": "gmailcleaner.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:8766"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    gmailcleaner-rtr:\n      rule: 'Host(`gmailcleaner.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia-nozip\n      service: gmailcleaner-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    gmailcleaner-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"gmailcleaner\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:8766'\n\n  serversTransports:\n    gmailcleaner:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:56.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-gmailcleaner.yml"
+    },
+    {
+      "id": "b2b6ab64-4737-4e42-a74c-2c16ac4ab8a3",
+      "name": "hoarder-rtr",
+      "hostname": "hoarder.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:3001"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    hoarder-rtr:\n      rule: 'Host(`hoarder.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n        # - middlewares-authelia\n        # - chain-no-auth\n      # had to comment this out to avoid challenges with the extension (one of the middlewares messes with the CORS)\n      service: hoarder-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    hoarder-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"hoarder\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:3001'\n\n  serversTransports:\n    hoarder:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:10.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-hoarder.yml"
+    },
+    {
+      "id": "faebfe19-52db-470b-aae1-f480f45d6d2c",
+      "name": "ittools-rtr",
+      "hostname": "ittools.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:5203"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    ittools-rtr:\n      rule: 'Host(`ittools.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: ittools-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    ittools-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"ittools\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:5203'\n\n  serversTransports:\n    ittools:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:40.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-ittools.yml"
+    },
+    {
+      "id": "c6064317-5c40-40e2-84f6-9422f2952717",
+      "name": "microbin-rtr",
+      "hostname": "microbin.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:8069"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    microbin-rtr:\n      rule: 'Host(`microbin.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth-nozip\n      service: microbin-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    microbin-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"microbin\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:8069'\n\n  serversTransports:\n    microbin:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:01:50.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-microbin.yml"
+    },
+    {
+      "id": "f909a0d0-6496-4263-8560-0eb1f0a88e63",
+      "name": "minecraft-rtr",
+      "hostname": "minecraft.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:25565"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    minecraft-rtr:\n      rule: 'Host(`minecraft.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-no-auth\n      service: minecraft-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    minecraft-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"minecraft\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:25565'\n\n  serversTransports:\n    minecraft:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:01:14.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-minecraft.yml"
+    },
+    {
+      "id": "16d61779-0fa4-4bc4-9552-d80f7ddb376d",
+      "name": "genai-rtr",
+      "hostname": "genai.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:3005"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    genai-rtr:\n      rule: 'Host(`genai.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      # middlewares:\n      #   - chain-no-auth-nozip.yml\n      service: genai-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    genai-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"genai\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:3005'\n\n  serversTransports:\n    genai:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:01:52.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-openwebui.yml"
+    },
+    {
+      "id": "b76872c3-d848-4328-b355-f71e3199e65b",
+      "name": "paperless-ai-rtr",
+      "hostname": "paperless-ai.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:3728"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    paperless-ai-rtr:\n      rule: 'Host(`paperless-ai.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: paperless-ai-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    paperless-ai-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"paperless-ai\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:3728'\n\n  serversTransports:\n    paperless-ai:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T07:16:30.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-paperless-ai.yml"
+    },
+    {
+      "id": "249b28eb-05c3-415a-9fed-0e52fcacdb2a",
+      "name": "paperless-rag-rtr",
+      "hostname": "paperless-rag.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:8975"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    paperless-rag-rtr:\n      rule: 'Host(`paperless-rag.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      service: paperless-rag-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    paperless-rag-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"paperless-rag\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:8975'\n\n  serversTransports:\n    paperless-rag:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T07:00:54.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-paperless-rag.yml"
+    },
+    {
+      "id": "d09896a6-2f06-4ed8-a49c-776ff7cb069e",
+      "name": "paperless-rtr",
+      "hostname": "paperless.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:8008"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth-nozip"
+      ],
+      "yamlContent": "http:\n  routers:\n    paperless-rtr:\n      rule: 'Host(`paperless.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth-nozip\n      service: paperless-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    paperless-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"paperless\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:8008'\n\n  serversTransports:\n    paperless:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T07:01:50.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-paperless.yml"
+    },
+    {
+      "id": "9d946a42-43d9-44e2-94d0-22e55f0657a2",
+      "name": "pgadmin-rtr",
+      "hostname": "pg.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:15432"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    pgadmin-rtr:\n      rule: 'Host(`pg.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n        # - chain-internal\n      service: pgadmin-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    pgadmin-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"pgadmin\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:15432'\n\n  serversTransports:\n    pgadmin:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T09:16:58.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-pgadmin.yml"
+    },
+    {
+      "id": "e8e0ee8a-9b7c-46fa-af9a-f70023307afa",
+      "name": "smokeping-rtr",
+      "hostname": "smokeping.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_UTILITIES\" }}:830"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    smokeping-rtr:\n      rule: 'Host(`smokeping.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: smokeping-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    smokeping-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"smokeping\"\n        servers:\n          - url: 'http://{{ env \"SERVERIP_UTILITIES\" }}:830'\n\n  serversTransports:\n    smokeping:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:38.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-smokeping.yml"
+    },
+    {
+      "id": "23882a70-d0aa-4b5f-a54a-c694b0571eed",
+      "name": "syncthing-rtr",
+      "hostname": "sync.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://{{ env \"SERVERIP_UTILITIES\" }}:8384"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    syncthing-rtr:\n      rule: 'Host(`sync.{{ env \"DOMAINNAME_1\" }}`)'\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      service: syncthing-svc\n      tls:\n        certResolver: dns-cloudflare\n        options: tls-opts@file\n\n  services:\n    syncthing-svc:\n      loadBalancer:\n        passHostHeader: true\n        serversTransport: \"syncthing\"\n        servers:\n          - url: 'https://{{ env \"SERVERIP_UTILITIES\" }}:8384'\n\n  serversTransports:\n    syncthing:\n      insecureSkipVerify: true",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-11T08:00:18.000Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "fileName": "vm-utilities-syncthing.yml"
+    }
+  ]
+}

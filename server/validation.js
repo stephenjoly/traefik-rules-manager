@@ -15,7 +15,7 @@ const ruleSchema = {
     backendUrl: {
       type: 'array',
       minItems: 1,
-      items: { type: 'string', format: 'uri' }
+      items: { type: 'string', minLength: 1 }
     },
     entryPoints: {
       type: 'array',
@@ -36,6 +36,7 @@ const ruleSchema = {
     stickySession: { type: 'boolean' },
     healthCheckPath: { type: 'string' },
     healthCheckInterval: { type: 'string' },
+    serversTransport: { type: 'string' },
     entrypoints: { type: 'array' } // tolerance for typo
   }
 };

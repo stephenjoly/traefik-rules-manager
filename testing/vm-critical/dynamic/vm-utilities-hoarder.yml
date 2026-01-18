@@ -1,0 +1,26 @@
+http:
+  routers:
+    hoarder-rtr:
+      rule: 'Host(`hoarder.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+        # - middlewares-authelia
+        # - chain-no-auth
+      # had to comment this out to avoid challenges with the extension (one of the middlewares messes with the CORS)
+      service: hoarder-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    hoarder-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "hoarder"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:3001'
+
+  serversTransports:
+    hoarder:
+      insecureSkipVerify: true

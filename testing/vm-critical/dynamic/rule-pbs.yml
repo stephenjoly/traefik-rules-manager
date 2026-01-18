@@ -1,0 +1,24 @@
+http:
+  routers:
+    pbs-rtr:
+      rule: 'Host(`pbs.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: pbs-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    pbs-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "pbs"
+        servers:
+          - url: 'https://10.87.111.240:8007'
+
+  serversTransports:
+    pbs:
+      insecureSkipVerify: true

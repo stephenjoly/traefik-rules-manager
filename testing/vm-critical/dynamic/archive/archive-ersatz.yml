@@ -1,0 +1,24 @@
+http:
+  routers:
+    ersatz-rtr:
+      rule: 'Host(`ersatz.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: ersatz-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    ersatz-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "ersatz"
+        servers:
+          - url: 'http://{{ env "SERVERIP_STREAMING" }}:8409'
+
+  serversTransports:
+    ersatz:
+      insecureSkipVerify: true

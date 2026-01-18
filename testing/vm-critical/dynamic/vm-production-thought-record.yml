@@ -1,0 +1,24 @@
+http:
+  routers:
+    onetable-rtr:
+      rule: 'Host(`onetable.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: onetable-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    onetable-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "onetable"
+        servers:
+          - url: 'http://{{ env "SERVERIP_PRODUCTION" }}:1001'
+
+  serversTransports:
+    onetable:
+      insecureSkipVerify: true

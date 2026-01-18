@@ -1,0 +1,24 @@
+http:
+  routers:
+    ghost-rtr:
+      rule: 'Host(`ghost.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: ghost-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    ghost-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "ghost"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:8282'
+
+  serversTransports:
+    ghost:
+      insecureSkipVerify: true

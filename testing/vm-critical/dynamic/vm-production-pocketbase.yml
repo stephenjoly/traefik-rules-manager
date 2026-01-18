@@ -1,0 +1,24 @@
+http:
+  routers:
+    pocketbase-rtr:
+      rule: 'Host(`pocketbase.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+      #   - chain-authelia
+      service: pocketbase-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    pocketbase-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "pocketbase"
+        servers:
+          - url: 'http://{{ env "SERVERIP_PRODUCTION" }}:8800'
+
+  serversTransports:
+    pocketbase:
+      insecureSkipVerify: true

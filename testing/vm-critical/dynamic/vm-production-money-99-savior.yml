@@ -1,0 +1,24 @@
+http:
+  routers:
+    money-99-savior-rtr:
+      rule: 'Host(`money-99-savior.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: money-99-savior-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    money-99-savior-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "money-99-savior"
+        servers:
+          - url: 'http://{{ env "SERVERIP_PRODUCTION" }}:5000'
+
+  serversTransports:
+    money-99-savior:
+      insecureSkipVerify: true

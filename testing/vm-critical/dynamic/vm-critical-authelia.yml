@@ -1,0 +1,24 @@
+http:
+  routers:
+    authelia-rtr:
+      rule: 'Host(`auth.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: authelia-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    authelia-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "authelia"
+        servers:
+          - url: 'http://{{ env "SERVERIP_CRITICAL" }}:9091'
+
+  serversTransports:
+    authelia:
+      insecureSkipVerify: true

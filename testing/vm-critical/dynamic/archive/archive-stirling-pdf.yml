@@ -1,0 +1,24 @@
+http:
+  routers:
+    stirling-pdf-rtr:
+      rule: 'Host(`stirling-pdf.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: stirling-pdf-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    stirling-pdf-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "stirling-pdf"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:8383'
+
+  serversTransports:
+    stirling-pdf:
+      insecureSkipVerify: true

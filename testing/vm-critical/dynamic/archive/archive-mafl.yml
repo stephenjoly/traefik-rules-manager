@@ -1,0 +1,24 @@
+http:
+  routers:
+    mafl-rtr:
+      rule: 'Host(`mafl.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: mafl-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    mafl-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "mafl"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:3007'
+
+  serversTransports:
+    mafl:
+      insecureSkipVerify: true

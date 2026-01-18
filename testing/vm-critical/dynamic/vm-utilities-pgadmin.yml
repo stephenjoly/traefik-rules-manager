@@ -1,0 +1,25 @@
+http:
+  routers:
+    pgadmin-rtr:
+      rule: 'Host(`pg.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+        # - chain-internal
+      service: pgadmin-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    pgadmin-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "pgadmin"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:15432'
+
+  serversTransports:
+    pgadmin:
+      insecureSkipVerify: true

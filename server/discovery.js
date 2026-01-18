@@ -3,38 +3,48 @@ import { promises as fs } from 'node:fs';
 import { listYamlFiles, statSafe } from './fs-helpers.js';
 import { parseTraefikYaml } from './yaml.js';
 
-function extractRuleFromYaml(parsed, filePath, idResolver) {
-  if (!parsed?.http?.routers || !parsed?.http?.services) return null;
-  const routerName = Object.keys(parsed.http.routers)[0];
-  if (!routerName) return null;
-  const router = parsed.http.routers[routerName];
-  const service = parsed.http.services[routerName];
-  if (!router || !service || !router.rule) return null;
+function extractHost(ruleStr) {
+  if (!ruleStr) return '';
+  const hostMatch = String(ruleStr).match(/Host\(([^)]+)\)/);
+  if (!hostMatch) return '';
+  const raw = hostMatch[1].trim();
+  return raw.replace(/^['"`]+|['"`]+$/g, '');
+}
 
-  const hostMatch = router.rule.match(/Host\\(`([^`]+)`\\)/);
-  const hostname = hostMatch ? hostMatch[1] : '';
-  const backendUrl = service.loadBalancer?.servers?.map(server => server.url).filter(Boolean) || [];
+function extractRulesFromYaml(parsed, filePath, idResolver) {
+  if (!parsed?.http?.routers) return [];
+  const rules = [];
 
-  return {
-    id: idResolver(routerName, filePath),
-    name: routerName,
-    hostname,
-    backendUrl,
-    entryPoints: router.entryPoints || [],
-    tls: Boolean(router.tls),
-    middlewares: router.middlewares || [],
-    yamlContent: null,
-    validationErrors: [],
-    isValid: true,
-    lastModified: null,
-    priority: router.priority,
-    certResolver: router.tls?.certResolver,
-    passHostHeader: service.loadBalancer?.passHostHeader,
-    stickySession: Boolean(service.loadBalancer?.sticky),
-    healthCheckPath: service.loadBalancer?.healthCheck?.path,
-    healthCheckInterval: service.loadBalancer?.healthCheck?.interval,
-    fileName: path.basename(filePath)
-  };
+  for (const [routerName, router] of Object.entries(parsed.http.routers)) {
+    const serviceName = router.service || routerName;
+    const service = parsed.http.services?.[serviceName];
+    if (!router || !service || !router.rule) continue;
+
+    const backendUrl = service.loadBalancer?.servers?.map(server => server.url).filter(Boolean) || [];
+    rules.push({
+      id: idResolver(routerName, filePath),
+      name: routerName,
+      hostname: extractHost(router.rule),
+      backendUrl,
+      entryPoints: router.entryPoints || [],
+      tls: Boolean(router.tls),
+      middlewares: router.middlewares || [],
+      yamlContent: null,
+      validationErrors: [],
+      isValid: true,
+      lastModified: null,
+      priority: router.priority,
+      certResolver: router.tls?.certResolver,
+      passHostHeader: service.loadBalancer?.passHostHeader,
+      stickySession: Boolean(service.loadBalancer?.sticky),
+      healthCheckPath: service.loadBalancer?.healthCheck?.path,
+      healthCheckInterval: service.loadBalancer?.healthCheck?.interval,
+      serversTransport: service.loadBalancer?.serversTransport,
+      fileName: path.basename(filePath)
+    });
+  }
+
+  return rules;
 }
 
 export async function discoverRules(dynamicPath, idResolver) {
@@ -45,8 +55,8 @@ export async function discoverRules(dynamicPath, idResolver) {
     try {
       const content = await fs.readFile(file, 'utf8');
       const parsed = parseTraefikYaml(content);
-      const rule = extractRuleFromYaml(parsed, file, idResolver);
-      if (rule) {
+      const rulesFromFile = extractRulesFromYaml(parsed, file, idResolver);
+      for (const rule of rulesFromFile) {
         const stats = await statSafe(file);
         if (stats) rule.lastModified = stats.mtime.toISOString();
         rule.yamlContent = content;

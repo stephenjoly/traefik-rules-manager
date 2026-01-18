@@ -1,0 +1,24 @@
+http:
+  routers:
+    actualbudget-rtr:
+      rule: 'Host(`actual.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: actualbudget-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    actualbudget-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "actualbudget"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:5006'
+
+  serversTransports:
+    actualbudget:
+      insecureSkipVerify: true

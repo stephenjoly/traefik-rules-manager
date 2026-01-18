@@ -1,0 +1,24 @@
+http:
+  routers:
+    bazarr-rtr:
+      rule: 'Host(`bazarr.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: bazarr-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    bazarr-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "bazarr"
+        servers:
+          - url: 'http://{{ env "SERVERIP_MEDIA" }}:6767'
+
+  serversTransports:
+    bazarr:
+      insecureSkipVerify: true

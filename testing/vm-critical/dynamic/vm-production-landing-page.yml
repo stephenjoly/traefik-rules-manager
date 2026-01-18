@@ -1,0 +1,40 @@
+http:
+  routers:
+    landing-page-rtr:
+      rule: 'Host(`{{ env "DOMAINNAME_1" }}`) || Host(`www.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: landing-page-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+    # HTTP router (for redirection)
+    landing-page-rtr-http:
+      rule: 'Host(`{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: landing-page-svc
+
+  services:
+    landing-page-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "landing-page"
+        servers:
+          - url: 'http://{{ env "SERVERIP_PRODUCTION" }}:2001'
+
+  serversTransports:
+    landing-page:
+      insecureSkipVerify: true
+
+  
+  middlewares:
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true

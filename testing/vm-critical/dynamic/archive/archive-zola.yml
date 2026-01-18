@@ -1,0 +1,24 @@
+http:
+  routers:
+    zola-rtr:
+      rule: 'Host(`hiya.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: zola-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    zola-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "zola"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:5089'
+
+  serversTransports:
+    zola:
+      insecureSkipVerify: true

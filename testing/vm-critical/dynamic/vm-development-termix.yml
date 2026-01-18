@@ -1,0 +1,24 @@
+http:
+  routers:
+    termix-rtr:
+      rule: 'Host(`termix.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia-nozip
+      service: termix-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    termix-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "termix"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:9123'
+
+  serversTransports:
+    termix:
+      insecureSkipVerify: true

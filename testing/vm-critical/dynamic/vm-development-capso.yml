@@ -1,0 +1,24 @@
+http:
+  routers:
+    capso-rtr:
+      rule: 'Host(`capso.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia-nozip
+      service: capso-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    capso-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "capso"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:1003'
+
+  serversTransports:
+    capso:
+      insecureSkipVerify: true

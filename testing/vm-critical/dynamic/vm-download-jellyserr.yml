@@ -1,0 +1,24 @@
+http:
+  routers:
+    jellyseerr-rtr:
+      rule: 'Host(`jellyseerr.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: jellyseerr-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    jellyseerr-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "jellyseerr"
+        servers:
+          - url: 'http://{{ env "SERVERIP_MEDIA" }}:5055'
+
+  serversTransports:
+    jellyseerr:
+      insecureSkipVerify: true

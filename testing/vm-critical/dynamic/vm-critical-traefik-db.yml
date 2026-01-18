@@ -1,0 +1,18 @@
+http:
+  routers:
+    traefik-rtr:
+      rule: 'Host(`traefik.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: traefik-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    traefik-svc:
+      loadBalancer:
+        servers:
+          - url: 'http://{{ env "SERVERIP_CRITICAL" }}:8080'

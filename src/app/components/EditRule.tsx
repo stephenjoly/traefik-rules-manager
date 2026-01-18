@@ -38,19 +38,20 @@ export default function EditRule({
       const config = parsed as any;
       const routerName = Object.keys(config?.http?.routers || {})[0] || rule.name;
       const router = config?.http?.routers?.[routerName];
+      const serviceName = router?.service || routerName;
       const payload: RulePayload = {
         name: routerName,
         hostname: router?.rule ? extractHostname(router.rule) : rule.hostname,
-        backendUrl: config?.http?.services?.[routerName]?.loadBalancer?.servers?.map((s: any) => s.url) || rule.backendUrl,
+        backendUrl: config?.http?.services?.[serviceName]?.loadBalancer?.servers?.map((s: any) => s.url) || rule.backendUrl,
         entryPoints: router?.entryPoints || rule.entryPoints,
         tls: !!router?.tls,
         middlewares: router?.middlewares,
         priority: router?.priority,
         certResolver: router?.tls?.certResolver,
-        passHostHeader: config?.http?.services?.[routerName]?.loadBalancer?.passHostHeader,
-        stickySession: Boolean(config?.http?.services?.[routerName]?.loadBalancer?.sticky),
-        healthCheckPath: config?.http?.services?.[routerName]?.loadBalancer?.healthCheck?.path,
-        healthCheckInterval: config?.http?.services?.[routerName]?.loadBalancer?.healthCheck?.interval,
+        passHostHeader: config?.http?.services?.[serviceName]?.loadBalancer?.passHostHeader,
+        stickySession: Boolean(config?.http?.services?.[serviceName]?.loadBalancer?.sticky),
+        healthCheckPath: config?.http?.services?.[serviceName]?.loadBalancer?.healthCheck?.path,
+        healthCheckInterval: config?.http?.services?.[serviceName]?.loadBalancer?.healthCheck?.interval,
       };
 
       await onSave(payload);

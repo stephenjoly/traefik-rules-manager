@@ -1,0 +1,24 @@
+http:
+  routers:
+    blinko-rtr:
+      rule: 'Host(`blinko.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia-nozip
+      service: blinko-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    blinko-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "blinko"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:1111'
+
+  serversTransports:
+    blinko:
+      insecureSkipVerify: true

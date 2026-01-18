@@ -1,0 +1,7 @@
+http:
+  middlewares:
+    middlewares-internal-service:
+      ipAllowList:
+        sourceRange:
+          - 10.87.111.0/24 # LAN
+          - 100.0.0.0/8 # Tailscale

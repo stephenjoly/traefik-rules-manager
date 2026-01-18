@@ -1,0 +1,24 @@
+http:
+  routers:
+    databasus-rtr:
+      rule: 'Host(`databasus.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia-nozip
+      service: databasus-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    databasus-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "databasus"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:4005'
+
+  serversTransports:
+    databasus:
+      insecureSkipVerify: true

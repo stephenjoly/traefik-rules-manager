@@ -1,0 +1,24 @@
+http:
+  routers:
+    dawarich-rtr:
+      rule: 'Host(`dawarich.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: dawarich-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    dawarich-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "dawarich"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:5656'
+
+  serversTransports:
+    dawarich:
+      insecureSkipVerify: true

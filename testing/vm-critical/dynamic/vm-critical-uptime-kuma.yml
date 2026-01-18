@@ -1,0 +1,24 @@
+http:
+  routers:
+    uptime-rtr:
+      rule: 'Host(`uptime.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: uptime-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    uptime-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "uptime"
+        servers:
+          - url: 'http://{{ env "SERVERIP_CRITICAL" }}:3001'
+
+  serversTransports:
+    uptime:
+      insecureSkipVerify: true

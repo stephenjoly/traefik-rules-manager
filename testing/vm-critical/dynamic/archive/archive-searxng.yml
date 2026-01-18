@@ -1,0 +1,24 @@
+http:
+  routers:
+    search-rtr:
+      rule: 'Host(`search.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: search-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    search-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "search"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:8079'
+
+  serversTransports:
+    search:
+      insecureSkipVerify: true

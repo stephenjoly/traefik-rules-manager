@@ -928,10 +928,9 @@ Complete list of environment variables:
 
 ### Remaining / Next Steps
 
-1. Add automated tests (unit for validation/YAML, integration for API + fs side effects)
-2. Harden error handling and document backup pruning behavior (`TRM_MAX_BACKUP_FILES`)
-3. Add authentication/rate limiting for production use
-4. Wire Traefik integration tests with real config samples
+1. Add frontend-e2e smoke (UI + API) and more API-level tests if needed
+2. Consider authentication/rate limiting for production use
+3. Wire Traefik integration tests with real config samples
 
 ## Resources
 

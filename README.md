@@ -18,4 +18,22 @@
   - `TRM_MAX_BACKUP_FILES` (default: `10`)
 
   Frontend API target: set `VITE_API_BASE` (default: `http://localhost:3001`) to point the UI at your running backend.
+
+  ## Docker
+
+  Build and run the backend via Docker:
+
+  ```
+  docker compose up --build
+  ```
+
+  Override the bind mounts in `docker-compose.yml` to point to your Traefik dynamic config and TRM metadata/backups.
+
+  ## Tests / Smoke
+
+  Run backend unit/integration tests (includes CRUD + YAML validation):
+
+  ```
+  npm test
+  ```
   

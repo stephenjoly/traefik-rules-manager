@@ -1,0 +1,24 @@
+http:
+  routers:
+    minecraft-rtr:
+      rule: 'Host(`minecraft.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+      #   - chain-no-auth
+      service: minecraft-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    minecraft-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "minecraft"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:25565'
+
+  serversTransports:
+    minecraft:
+      insecureSkipVerify: true

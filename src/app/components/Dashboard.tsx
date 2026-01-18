@@ -34,6 +34,7 @@ type DashboardProps = {
   onDeleteRule: (ruleId: string) => void;
   onReload: () => void;
   onChangeDirectory: () => void;
+  busy?: boolean;
 };
 
 type SortField = 'name' | 'hostname' | 'status' | 'lastModified';
@@ -47,6 +48,7 @@ export default function Dashboard({
   onDeleteRule,
   onReload,
   onChangeDirectory,
+  busy = false,
 }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('lastModified');
@@ -142,11 +144,11 @@ export default function Dashboard({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={onReload}>
+              <Button variant="outline" onClick={onReload} disabled={busy}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Reload
               </Button>
-              <Button onClick={onAddProxy}>
+              <Button onClick={onAddProxy} disabled={busy}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Reverse Proxy
               </Button>

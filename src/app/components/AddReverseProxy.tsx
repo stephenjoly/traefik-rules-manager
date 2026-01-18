@@ -32,6 +32,7 @@ type FormData = {
   stickySession: boolean;
   healthCheckPath: string;
   healthCheckInterval: string;
+  serversTransport: string;
 };
 
 const DEFAULT_VALUES: FormData = {
@@ -46,6 +47,7 @@ const DEFAULT_VALUES: FormData = {
   stickySession: false,
   healthCheckPath: '',
   healthCheckInterval: '30s',
+  serversTransport: '',
 };
 
 export default function AddReverseProxy({
@@ -54,7 +56,7 @@ export default function AddReverseProxy({
   existingMiddlewares,
 }: AddReverseProxyProps) {
   const [mode, setMode] = useState<'form' | 'yaml'>('form');
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormData>({
     defaultValues: DEFAULT_VALUES,
   });
 
@@ -129,7 +131,8 @@ export default function AddReverseProxy({
       passHostHeader: data.passHostHeader,
       stickySession: data.stickySession,
       healthCheckPath: data.healthCheckPath,
-      healthCheckInterval: data.healthCheckInterval
+      healthCheckInterval: data.healthCheckInterval,
+      serversTransport: data.serversTransport || undefined
     };
 
     setSaving(true);
@@ -150,25 +153,42 @@ export default function AddReverseProxy({
       const config = parsed as any;
       const routerName = Object.keys(config?.http?.routers || {})[0] || 'unnamed';
       const router = config?.http?.routers?.[routerName];
+      const serviceName = router?.service || routerName;
+      const lb = config?.http?.services?.[serviceName]?.loadBalancer || {};
 
       const middlewares = router?.middlewares || [];
       const payload: RulePayload = {
         name: routerName,
         hostname: router?.rule ? extractHostname(router.rule) : '',
-        backendUrl: config?.http?.services?.[routerName]?.loadBalancer?.servers?.map((s: any) => s.url) || [],
+        backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || [],
         entryPoints: router?.entryPoints || [],
         tls: !!router?.tls,
         middlewares: middlewares.length ? middlewares : undefined,
         priority: router?.priority,
         certResolver: router?.tls?.certResolver,
-        passHostHeader: config?.http?.services?.[routerName]?.loadBalancer?.passHostHeader,
-        stickySession: Boolean(config?.http?.services?.[routerName]?.loadBalancer?.sticky),
-        healthCheckPath: config?.http?.services?.[routerName]?.loadBalancer?.healthCheck?.path,
-        healthCheckInterval: config?.http?.services?.[routerName]?.loadBalancer?.healthCheck?.interval,
+        passHostHeader: lb.passHostHeader,
+        stickySession: Boolean(lb.sticky),
+        healthCheckPath: lb.healthCheck?.path,
+        healthCheckInterval: lb.healthCheck?.interval,
+        serversTransport: lb.serversTransport
       };
 
       setSaving(true);
       await onSave(payload);
+      // populate form fields so user can switch to form mode with data filled
+      setValue('name', payload.name);
+      setValue('hostname', payload.hostname);
+      setBackends(payload.backendUrl);
+      setEntryPoints(payload.entryPoints);
+      setSelectedMiddlewares(payload.middlewares || []);
+      setValue('tls', payload.tls);
+      setValue('priority', payload.priority || 0);
+      setValue('certResolver', payload.certResolver || '');
+      setValue('passHostHeader', payload.passHostHeader ?? true);
+      setValue('stickySession', payload.stickySession ?? false);
+      setValue('healthCheckPath', payload.healthCheckPath || '');
+      setValue('healthCheckInterval', payload.healthCheckInterval || '');
+      setValue('serversTransport', payload.serversTransport || '');
       setSaving(false);
     } catch (error) {
       setYamlError(error instanceof Error ? error.message : 'Invalid YAML');
@@ -470,6 +490,19 @@ export default function AddReverseProxy({
                           />
                           <p className="text-sm text-gray-500">
                             Interval between health checks (default: 30s)
+                          </p>
+                        </div>
+
+                        {/* Servers Transport */}
+                        <div className="space-y-2">
+                          <Label htmlFor="serversTransport">Servers Transport</Label>
+                          <Input
+                            id="serversTransport"
+                            {...register('serversTransport')}
+                            placeholder="firefox"
+                          />
+                          <p className="text-sm text-gray-500">
+                            Optional serversTransport to use for this service
                           </p>
                         </div>
                       </AccordionContent>

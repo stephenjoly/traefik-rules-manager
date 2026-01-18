@@ -25,6 +25,7 @@ export default function App() {
   const [existingMiddlewares, setExistingMiddlewares] = useState<string[]>([]);
   const [selectedRule, setSelectedRule] = useState<TraefikRule | null>(null);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const mapRule = (rule: any): TraefikRule => ({
     ...rule,
@@ -73,29 +74,51 @@ export default function App() {
 
   const handleDeleteRule = async (ruleId: string) => {
     const rule = rules.find(r => r.id === ruleId);
-    await apiDeleteRule(apiBase, ruleId);
-    setRules(rules.filter(r => r.id !== ruleId));
-    if (rule) {
-      toast.success(`Deleted rule: ${rule.name}`);
-    } else {
-      toast.success('Deleted rule');
+    setActionLoading(true);
+    try {
+      await apiDeleteRule(apiBase, ruleId);
+      setRules(rules.filter(r => r.id !== ruleId));
+      toast.success(`Deleted rule: ${rule ? rule.name : 'rule'}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete rule';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleSaveNewProxy = async (payload: RulePayload) => {
-    const created = await apiCreateRule(apiBase, payload);
-    const mapped = mapRule(created);
-    setRules([...rules, mapped]);
-    setCurrentView('dashboard');
-    toast.success(`Created new reverse proxy: ${mapped.name}`);
+    setActionLoading(true);
+    try {
+      const created = await apiCreateRule(apiBase, payload);
+      const mapped = mapRule(created);
+      setRules([...rules, mapped]);
+      setCurrentView('dashboard');
+      toast.success(`Created new reverse proxy: ${mapped.name}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create rule';
+      toast.error(message);
+      throw err;
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleSaveEditedRule = async (id: string, payload: RulePayload) => {
-    const updated = await apiUpdateRule(apiBase, id, payload);
-    const mapped = mapRule(updated);
-    setRules(rules.map(r => r.id === mapped.id ? mapped : r));
-    setCurrentView('dashboard');
-    toast.success(`Updated rule: ${mapped.name}`);
+    setActionLoading(true);
+    try {
+      const updated = await apiUpdateRule(apiBase, id, payload);
+      const mapped = mapRule(updated);
+      setRules(rules.map(r => r.id === mapped.id ? mapped : r));
+      setCurrentView('dashboard');
+      toast.success(`Updated rule: ${mapped.name}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update rule';
+      toast.error(message);
+      throw err;
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleBackToDashboard = () => {
@@ -104,10 +127,18 @@ export default function App() {
   };
 
   const handleReload = async () => {
+    setActionLoading(true);
     toast.info('Reloading configuration files...');
-    await apiResync(apiBase);
-    await loadRules(apiBase);
-    toast.success('Configuration reloaded');
+    try {
+      await apiResync(apiBase);
+      await loadRules(apiBase);
+      toast.success('Configuration reloaded');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reload';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -127,6 +158,7 @@ export default function App() {
           onDeleteRule={handleDeleteRule}
           onReload={handleReload}
           onChangeDirectory={() => setCurrentView('setup')}
+          busy={actionLoading}
         />
       )}
 

@@ -1,0 +1,24 @@
+http:
+  routers:
+    kaneo-api-rtr:
+      rule: 'Host(`kaneo-api.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+      #   - chain-no-auth
+      service: kaneo-api-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    kaneo-api-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "kaneo-api"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:1337'
+
+  serversTransports:
+    kaneo-api:
+      insecureSkipVerify: true

@@ -1,0 +1,24 @@
+http:
+  routers:
+    pingvin-rtr:
+      rule: 'Host(`pingvin.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: pingvin-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    pingvin-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "pingvin"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:3003'
+
+  serversTransports:
+    pingvin:
+      insecureSkipVerify: true

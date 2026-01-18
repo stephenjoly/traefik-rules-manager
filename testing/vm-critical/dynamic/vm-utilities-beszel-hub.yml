@@ -1,0 +1,24 @@
+http:
+  routers:
+    beszel-rtr:
+      rule: 'Host(`beszel.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: beszel-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    beszel-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "beszel"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:8090'
+
+  serversTransports:
+    beszel:
+      insecureSkipVerify: true

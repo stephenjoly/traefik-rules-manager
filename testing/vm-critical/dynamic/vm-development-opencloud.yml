@@ -1,0 +1,24 @@
+http:
+  routers:
+    opencloud-rtr:
+      rule: 'Host(`opencloud.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      # middlewares:
+      #   - chain-authelia-nozip
+      service: opencloud-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    opencloud-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "opencloud"
+        servers:
+          - url: 'https://{{ env "SERVERIP_DEVELOPMENT" }}:9203'
+
+  serversTransports:
+    opencloud:
+      insecureSkipVerify: true

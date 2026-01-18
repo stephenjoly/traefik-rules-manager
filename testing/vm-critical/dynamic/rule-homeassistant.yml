@@ -1,0 +1,24 @@
+http:
+  routers:
+    homeassistant-rtr:
+      rule: 'Host(`homeassistant.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: homeassistant-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    homeassistant-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "homeassistant"
+        servers:
+          - url: 'http://10.87.111.56:8123'
+
+  serversTransports:
+    homeassistant:
+      insecureSkipVerify: true

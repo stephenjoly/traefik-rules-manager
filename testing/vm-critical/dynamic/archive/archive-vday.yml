@@ -1,0 +1,24 @@
+http:
+  routers:
+    vday-rtr:
+      rule: 'Host(`forleila.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+      service: vday-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    vday-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "vday"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:5696'
+
+  serversTransports:
+    vday:
+      insecureSkipVerify: true

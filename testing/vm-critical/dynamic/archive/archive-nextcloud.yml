@@ -1,0 +1,69 @@
+http:
+  routers:
+    nextcloud-rtr:
+      rule: 'Host(`nextcloud.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth-nozip
+      service: nextcloud-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    nextcloud-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "nextcloud"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:3198'
+
+  serversTransports:
+    nextcloud:
+      insecureSkipVerify: true
+
+# http:
+#   routers:
+#     nextcloud:
+#       entryPoints:
+#         - web
+#       rule: "Host(`nextcloud.stephenjoly.net`)"
+#       middlewares:
+#         - nc-header
+#         - https-redirect
+
+#     nextcloud-secure:
+#       entryPoints:
+#         - websecure
+#       rule: "Host(`nextcloud.stephenjoly.net`)"
+#       middlewares:
+#         - nc-rep
+#         - nc-header
+#       tls:
+#         certResolver: letsencrypt
+#       service: nextcloud
+
+#   middlewares:
+#     https-redirect:
+#       redirectScheme:
+#         scheme: https
+
+#     nc-rep:
+#       redirectRegex:
+#         regex: "https://(.*)/.well-known/(card|cal)dav"
+#         replacement: "https://${1}/remote.php/dav/"
+#         permanent: true
+
+#     nc-header:
+#       headers:
+#         customFrameOptionsValue: "SAMEORIGIN"
+#         customResponseHeaders:
+#           Strict-Transport-Security: 15552000
+
+#   services:
+#     nextcloud:
+#       loadBalancer:
+#         servers:
+#           - url: "http://10.87.111.253:3198"
+#         passHostHeader: true

@@ -1,0 +1,24 @@
+http:
+  routers:
+    ittools-rtr:
+      rule: 'Host(`ittools.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: ittools-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    ittools-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "ittools"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:5203'
+
+  serversTransports:
+    ittools:
+      insecureSkipVerify: true

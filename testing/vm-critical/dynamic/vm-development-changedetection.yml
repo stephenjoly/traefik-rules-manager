@@ -1,0 +1,24 @@
+http:
+  routers:
+    changedetection-rtr:
+      rule: 'Host(`changedetection.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: changedetection-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    changedetection-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "changedetection"
+        servers:
+          - url: 'http://{{ env "SERVERIP_DEVELOPMENT" }}:5000'
+
+  serversTransports:
+    changedetection:
+      insecureSkipVerify: true

@@ -1,0 +1,24 @@
+http:
+  routers:
+    gokapi-rtr:
+      rule: 'Host(`gokapi.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth-nozip
+      service: gokapi-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    gokapi-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "gokapi"
+        servers:
+          - url: 'https://{{ env "SERVERIP_DEVELOPMENT" }}:53842'
+
+  serversTransports:
+    gokapi:
+      insecureSkipVerify: true

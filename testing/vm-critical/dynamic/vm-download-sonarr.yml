@@ -1,0 +1,24 @@
+http:
+  routers:
+    sonarr-rtr:
+      rule: 'Host(`sonarr.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: sonarr-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    sonarr-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "sonarr"
+        servers:
+          - url: 'http://{{ env "SERVERIP_MEDIA" }}:8989'
+
+  serversTransports:
+    sonarr:
+      insecureSkipVerify: true

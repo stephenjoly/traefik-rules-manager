@@ -1,0 +1,24 @@
+http:
+  routers:
+    firefox-rtr:
+      rule: 'Host(`firefox.{{ env "DOMAINNAME_1" }}`)'
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-authelia
+      service: firefox-svc
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  services:
+    firefox-svc:
+      loadBalancer:
+        passHostHeader: true
+        serversTransport: "firefox"
+        servers:
+          - url: 'http://{{ env "SERVERIP_UTILITIES" }}:5800'
+
+  serversTransports:
+    firefox:
+      insecureSkipVerify: true
