@@ -1,7 +1,0 @@
-http:
-  middlewares:
-    chain-no-auth-nozip:
-      chain:
-        middlewares:
-          - middlewares-secure-headers
-          - middlewares-rate-limit

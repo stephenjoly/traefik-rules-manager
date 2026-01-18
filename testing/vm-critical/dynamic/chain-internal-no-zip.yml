@@ -1,8 +1,0 @@
-http:
-  middlewares:
-    chain-internal-no-compress:
-      chain:
-        middlewares:
-          - middlewares-rate-limit
-          - middlewares-secure-headers
-          - middlewares-internal-service
