@@ -30,12 +30,13 @@ function buildLoadBalancer(rule) {
 }
 
 export function generateTraefikYaml(rule) {
+  const serviceName = rule.serviceName || rule.name;
   const config = {
     http: {
       routers: {
         [rule.name]: {
           rule: `Host(\`${rule.hostname}\`)`,
-          service: rule.name,
+          service: serviceName,
           entryPoints: rule.entryPoints,
           ...(rule.middlewares?.length ? { middlewares: rule.middlewares } : {}),
           ...(rule.priority ? { priority: rule.priority } : {}),
@@ -49,7 +50,7 @@ export function generateTraefikYaml(rule) {
         }
       },
       services: {
-        [rule.name]: {
+        [serviceName]: {
           loadBalancer: buildLoadBalancer(rule)
         }
       }

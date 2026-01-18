@@ -24,6 +24,7 @@ function extractRulesFromYaml(parsed, filePath, idResolver) {
     rules.push({
       id: idResolver(routerName, filePath),
       name: routerName,
+      serviceName,
       hostname: extractHost(router.rule),
       backendUrl,
       entryPoints: router.entryPoints || [],

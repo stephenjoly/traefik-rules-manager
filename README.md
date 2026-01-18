@@ -21,13 +21,15 @@
 
   ## Docker
 
-  Build and run the backend via Docker:
+  Build and run backend + frontend:
 
   ```
   docker compose up --build
   ```
 
-  Override the bind mounts in `docker-compose.yml` to point to your Traefik dynamic config and TRM metadata/backups.
+  - Backend runs on `3001`, frontend on `4173` (talking to backend).
+  - Update volumes in `docker-compose.yml` to point to your Traefik dynamic config (`/config/dynamic`) and metadata/backups.
+  - If you see npm/node_modules issues in the frontend container, rerun with `docker compose down && docker compose up --build` (frontend service wipes its node_modules on start).
 
   ## Tests / Smoke
 

@@ -12,8 +12,11 @@ import {
   apiGetMiddlewares,
   apiGetRules,
   apiResync,
-  apiUpdateRule
+  apiUpdateRule,
+  apiSetDynamicPath
 } from './api';
+import { useEffect } from 'react';
+import { duplicateRule } from './utils/rules';
 
 type View = 'setup' | 'dashboard' | 'add' | 'edit';
 
@@ -26,6 +29,8 @@ export default function App() {
   const [selectedRule, setSelectedRule] = useState<TraefikRule | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [autoConnectTried, setAutoConnectTried] = useState(false);
+  const [draftRule, setDraftRule] = useState<RulePayload | null>(null);
 
   const mapRule = (rule: any): TraefikRule => ({
     ...rule,
@@ -44,16 +49,19 @@ export default function App() {
     setExistingMiddlewares(data);
   };
 
-  const handleDirectoryLoad = async (base: string) => {
+  const handleDirectoryLoad = async (path?: string) => {
     setLoading(true);
     try {
-      const health = await apiGetHealth(base);
-      await loadRules(base);
-      await loadMiddlewares(base);
-      setApiBase(base);
-      setWorkingDirectory(health.configPath || base);
+      if (path) {
+        await apiSetDynamicPath(apiBase, path);
+      }
+      const health = await apiGetHealth(apiBase);
+      await loadRules(apiBase);
+      await loadMiddlewares(apiBase);
+      const resolvedPath = health.configPath || path || workingDirectory || '/config/dynamic';
+      setWorkingDirectory(resolvedPath);
       setCurrentView('dashboard');
-      toast.success(`Connected to API at ${base}`);
+      toast.success(`Connected to Traefik config at ${health.configPath || path || apiBase}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load';
       toast.error(message);
@@ -63,12 +71,24 @@ export default function App() {
     }
   };
 
+  // Attempt auto-connect on first load
+  useEffect(() => {
+    if (autoConnectTried) return;
+    setAutoConnectTried(true);
+    handleDirectoryLoad().catch(() => {
+      // keep setup view if it fails
+    });
+  }, [autoConnectTried, apiBase]);
+
   const handleAddProxy = () => {
+    setDraftRule(null);
     setCurrentView('add');
   };
 
   const handleEditRule = (rule: TraefikRule) => {
-    setSelectedRule(rule);
+    const baseName = rule.fileName ? rule.fileName.replace(/\.ya?ml$/i, '') : rule.name;
+    setSelectedRule({ ...rule, name: baseName });
+    setDraftRule(null);
     setCurrentView('edit');
   };
 
@@ -146,7 +166,7 @@ export default function App() {
       <Toaster position="top-right" richColors />
       
       {currentView === 'setup' && (
-        <DirectorySetup onLoad={handleDirectoryLoad} loading={loading} defaultApiBase={apiBase} />
+        <DirectorySetup onLoad={handleDirectoryLoad} loading={loading} />
       )}
 
       {currentView === 'dashboard' && (
@@ -167,6 +187,9 @@ export default function App() {
           onSave={handleSaveNewProxy}
           onCancel={handleBackToDashboard}
           existingMiddlewares={existingMiddlewares}
+          templates={rules}
+          initialValue={draftRule || undefined}
+          defaultTemplateId={draftRule ? draftRule.name : undefined}
         />
       )}
 
@@ -176,6 +199,10 @@ export default function App() {
           onSave={(payload) => handleSaveEditedRule(selectedRule.id, payload)}
           onCancel={handleBackToDashboard}
           existingMiddlewares={existingMiddlewares}
+          onDuplicate={() => {
+            setDraftRule(duplicateRule(selectedRule));
+            setCurrentView('add');
+          }}
         />
       )}
     </div>

@@ -1,9 +1,7 @@
-version: '3.9'
-
 services:
-  trm:
+  backend:
     build: .
-    container_name: trm
+    container_name: trm-backend
     restart: unless-stopped
     environment:
       - TRAEFIK_DYNAMIC_CONFIG_PATH=/config/dynamic
@@ -14,6 +12,21 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./traefik/dynamic:/config/dynamic
-      - ./trm/metadata:/config/metadata
-      - ./trm/backups:/config/backups
+      - ./testing/vm-critical/dynamic:/config/dynamic
+      - ./testing/vm-critical/metadata:/config/metadata
+      - ./testing/vm-critical/backups:/config/backups
+
+  frontend:
+    image: node:20-alpine
+    container_name: trm-frontend
+    working_dir: /app
+    command: sh -c "npm ci && npm run build && npm run preview -- --host --port 4173"
+    ports:
+      - "4173:4173"
+    environment:
+      - VITE_API_BASE=http://localhost:3001
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    depends_on:
+      - backend

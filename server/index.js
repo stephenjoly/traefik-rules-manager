@@ -6,7 +6,7 @@ const log = createLogger(config.logLevel);
 
 async function start() {
   const app = await createApp();
-  startFileWatcher();
+  startFileWatcher(config.dynamicPath);
 
   app.listen(config.port, config.host, () => {
     log.info('Server started', { port: config.port, host: config.host });

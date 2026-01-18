@@ -13,6 +13,7 @@ type EditRuleProps = {
   onSave: (payload: RulePayload) => Promise<void>;
   onCancel: () => void;
   existingMiddlewares: string[];
+  onDuplicate: () => void;
 };
 
 export default function EditRule({
@@ -20,6 +21,7 @@ export default function EditRule({
   onSave,
   onCancel,
   existingMiddlewares,
+  onDuplicate,
 }: EditRuleProps) {
   const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
   const [yamlContent, setYamlContent] = useState(rule.yamlContent);
@@ -66,6 +68,9 @@ export default function EditRule({
         <Button variant="ghost" onClick={onCancel} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
+        </Button>
+        <Button variant="outline" onClick={onDuplicate} className="mb-4 ml-2">
+          Duplicate Rule
         </Button>
 
         <Card>

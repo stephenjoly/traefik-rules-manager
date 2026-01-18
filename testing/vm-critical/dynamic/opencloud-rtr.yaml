@@ -1,0 +1,17 @@
+http:
+  routers:
+    opencloud-rtr:
+      rule: Host(`opencloud.{{ env "DOMAINNAME_1" }}`)
+      service: opencloud-rtr
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: dns-cloudflare
+  services:
+    opencloud-rtr:
+      loadBalancer:
+        servers:
+          - url: https://{{ env "SERVERIP_DEVELOPMENT" }}:9201
+          - url: https://{{ env "SERVERIP_DEVELOPMENT" }}:9203
+        serversTransport: opencloud
+        passHostHeader: true

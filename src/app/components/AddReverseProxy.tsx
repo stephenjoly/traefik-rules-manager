@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Plus, X, Code2, Settings } from 'lucide-react';
 import { Button } from './ui/button';
@@ -10,18 +10,23 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Textarea } from './ui/textarea';
-import type { RulePayload } from '../types';
+import type { RulePayload, TraefikRule } from '../types';
 import Editor from '@monaco-editor/react';
 import * as yaml from 'js-yaml';
+import { duplicateRule, ruleToPayload } from '../utils/rules';
 
 type AddReverseProxyProps = {
   onSave: (payload: RulePayload) => Promise<void>;
   onCancel: () => void;
   existingMiddlewares: string[];
+  initialValue?: RulePayload;
+  templates?: TraefikRule[];
+  defaultTemplateId?: string;
 };
 
 type FormData = {
   name: string;
+  serviceName: string;
   hostname: string;
   backendUrl: string;
   entryPoints: string;
@@ -37,6 +42,7 @@ type FormData = {
 
 const DEFAULT_VALUES: FormData = {
   name: '',
+  serviceName: '',
   hostname: '',
   backendUrl: '',
   entryPoints: 'web,websecure',
@@ -54,9 +60,12 @@ export default function AddReverseProxy({
   onSave,
   onCancel,
   existingMiddlewares,
+  initialValue,
+  templates = [],
+  defaultTemplateId,
 }: AddReverseProxyProps) {
   const [mode, setMode] = useState<'form' | 'yaml'>('form');
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<FormData>({
     defaultValues: DEFAULT_VALUES,
   });
 
@@ -66,9 +75,47 @@ export default function AddReverseProxy({
   const [backendInput, setBackendInput] = useState('');
   const [entryPointInput, setEntryPointInput] = useState('');
   const [middlewareInput, setMiddlewareInput] = useState('');
+  const [availableMiddleware, setAvailableMiddleware] = useState('');
   const [yamlContent, setYamlContent] = useState('');
   const [yamlError, setYamlError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [yamlTouched, setYamlTouched] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+
+  const setFromPayload = (payload: RulePayload) => {
+    reset({
+      name: payload.name,
+      serviceName: payload.serviceName || payload.name,
+      hostname: payload.hostname,
+      backendUrl: '',
+      entryPoints: payload.entryPoints.join(','),
+      tls: payload.tls,
+      priority: payload.priority || 0,
+      certResolver: payload.certResolver || '',
+      passHostHeader: payload.passHostHeader ?? true,
+      stickySession: payload.stickySession ?? false,
+      healthCheckPath: payload.healthCheckPath || '',
+      healthCheckInterval: payload.healthCheckInterval || '',
+      serversTransport: payload.serversTransport || '',
+    });
+    setBackends(payload.backendUrl || []);
+    setEntryPoints(payload.entryPoints || []);
+    setSelectedMiddlewares(payload.middlewares || []);
+    setYamlContent(generateYamlFromPayload(payload));
+    setYamlTouched(false);
+  };
+
+  useEffect(() => {
+    if (defaultTemplateId && !selectedTemplateId) {
+      setSelectedTemplateId(defaultTemplateId);
+    }
+    if (initialValue) {
+      setFromPayload(initialValue);
+    } else if (defaultTemplateId) {
+      const tmpl = templates.find(t => t.id === defaultTemplateId);
+      if (tmpl) setFromPayload(ruleToPayload(tmpl, { copyName: false }));
+    }
+  }, [initialValue, reset, defaultTemplateId, selectedTemplateId, templates]);
 
   const addBackend = () => {
     if (backendInput.trim() && !backends.includes(backendInput.trim())) {
@@ -85,6 +132,13 @@ export default function AddReverseProxy({
     if (middlewareInput.trim() && !selectedMiddlewares.includes(middlewareInput.trim())) {
       setSelectedMiddlewares([...selectedMiddlewares, middlewareInput.trim()]);
       setMiddlewareInput('');
+    }
+  };
+
+  const addMiddlewareFromList = () => {
+    if (availableMiddleware && !selectedMiddlewares.includes(availableMiddleware)) {
+      setSelectedMiddlewares([...selectedMiddlewares, availableMiddleware]);
+      setAvailableMiddleware('');
     }
   };
 
@@ -121,6 +175,7 @@ export default function AddReverseProxy({
 
     const payload: RulePayload = {
       name: data.name,
+      serviceName: data.serviceName || data.name,
       hostname: data.hostname,
       backendUrl: backends,
       entryPoints: entryPoints,
@@ -159,6 +214,7 @@ export default function AddReverseProxy({
       const middlewares = router?.middlewares || [];
       const payload: RulePayload = {
         name: routerName,
+        serviceName: serviceName,
         hostname: router?.rule ? extractHostname(router.rule) : '',
         backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || [],
         entryPoints: router?.entryPoints || [],
@@ -177,6 +233,7 @@ export default function AddReverseProxy({
       await onSave(payload);
       // populate form fields so user can switch to form mode with data filled
       setValue('name', payload.name);
+      setValue('serviceName', payload.serviceName || payload.name);
       setValue('hostname', payload.hostname);
       setBackends(payload.backendUrl);
       setEntryPoints(payload.entryPoints);
@@ -196,6 +253,73 @@ export default function AddReverseProxy({
     }
   };
 
+  const syncYamlFromForm = () => {
+    const data = watch();
+    const generated = generateYaml(
+      data.name || 'my-service',
+      data.serviceName || data.name || 'my-service',
+      data.hostname || '',
+      backends,
+      entryPoints,
+      data.tls,
+      selectedMiddlewares,
+      {
+        priority: data.priority || 0,
+        certResolver: data.certResolver || '',
+        passHostHeader: data.passHostHeader ?? true,
+        stickySession: data.stickySession ?? false,
+        healthCheckPath: data.healthCheckPath || '',
+        healthCheckInterval: data.healthCheckInterval || '',
+        serversTransport: data.serversTransport || '',
+      }
+    );
+    setYamlContent(generated);
+  };
+
+  const syncFormFromYaml = () => {
+    if (!yamlContent) return;
+    try {
+      const parsed = yaml.load(yamlContent) as any;
+      const routerName = Object.keys(parsed?.http?.routers || {})[0] || 'unnamed';
+      const router = parsed?.http?.routers?.[routerName];
+      const serviceName = router?.service || routerName;
+      const lb = parsed?.http?.services?.[serviceName]?.loadBalancer || {};
+      const middlewares = router?.middlewares || [];
+
+      const payload: RulePayload = {
+        name: routerName,
+        hostname: router?.rule ? extractHostname(router.rule) : '',
+        backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || [],
+        entryPoints: router?.entryPoints || [],
+        tls: !!router?.tls,
+        middlewares: middlewares.length ? middlewares : undefined,
+        priority: router?.priority,
+        certResolver: router?.tls?.certResolver,
+        passHostHeader: lb.passHostHeader,
+        stickySession: Boolean(lb.sticky),
+        healthCheckPath: lb.healthCheck?.path,
+        healthCheckInterval: lb.healthCheck?.interval,
+        serversTransport: lb.serversTransport
+      };
+
+      setValue('name', payload.name);
+      setValue('hostname', payload.hostname);
+      setBackends(payload.backendUrl);
+      setEntryPoints(payload.entryPoints);
+      setSelectedMiddlewares(payload.middlewares || []);
+      setValue('tls', payload.tls);
+      setValue('priority', payload.priority || 0);
+      setValue('certResolver', payload.certResolver || '');
+      setValue('passHostHeader', payload.passHostHeader ?? true);
+      setValue('stickySession', payload.stickySession ?? false);
+      setValue('healthCheckPath', payload.healthCheckPath || '');
+      setValue('healthCheckInterval', payload.healthCheckInterval || '');
+      setValue('serversTransport', payload.serversTransport || '');
+    } catch (err) {
+      // keep form as-is if YAML invalid
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -212,7 +336,43 @@ export default function AddReverseProxy({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={mode} onValueChange={(v) => setMode(v as 'form' | 'yaml')}>
+            {templates.length > 0 && (
+              <div className="mb-4 space-y-2">
+                <Label htmlFor="templateSelect">Start from existing rule (optional)</Label>
+                <div className="flex gap-2">
+                  <select
+                    id="templateSelect"
+                    className="border rounded px-2 py-2 text-sm w-full"
+                    value={selectedTemplateId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedTemplateId(id);
+                      const template = templates.find((t) => t.id === id);
+                      if (template) {
+                        setFromPayload(ruleToPayload(template, { copyName: false }));
+                      }
+                    }}
+                  >
+                    <option value="">None</option>
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.fileName || `${t.name}.yml`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-sm text-gray-500">Prefill the form using an existing rule.</p>
+              </div>
+            )}
+            <Tabs
+              value={mode}
+              onValueChange={(v) => {
+                const nextMode = v as 'form' | 'yaml';
+                if (nextMode === 'yaml') syncYamlFromForm();
+                if (nextMode === 'form') syncFormFromYaml();
+                setMode(nextMode);
+              }}
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="form">Form Builder</TabsTrigger>
                 <TabsTrigger value="yaml">
@@ -231,7 +391,7 @@ export default function AddReverseProxy({
 
                     {/* Name */}
                     <div className="space-y-2">
-                      <Label htmlFor="name">Rule Name *</Label>
+                      <Label htmlFor="name">Rule Name (used as filename) *</Label>
                       <Input
                         id="name"
                         {...register('name', { 
@@ -246,6 +406,22 @@ export default function AddReverseProxy({
                       {errors.name && (
                         <p className="text-sm text-red-600">{errors.name.message}</p>
                       )}
+                    </div>
+
+                    {/* Service Name */}
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceName">Service Name (optional)</Label>
+                      <Input
+                        id="serviceName"
+                        {...register('serviceName', { 
+                          pattern: {
+                            value: /^[a-zA-Z0-9-_]*$/,
+                            message: 'Only alphanumeric characters, hyphens, and underscores allowed'
+                          }
+                        })}
+                        placeholder="my-app-service"
+                      />
+                      <p className="text-sm text-gray-500">Defaults to rule name if left empty.</p>
                     </div>
 
                     {/* Hostnames */}
@@ -372,22 +548,45 @@ export default function AddReverseProxy({
                         {/* Middlewares */}
                         <div className="space-y-2">
                           <Label htmlFor="middleware">Middlewares</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="middleware"
-                              value={middlewareInput}
-                              onChange={(e) => setMiddlewareInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  addMiddleware();
-                                }
-                              }}
-                              placeholder="compress, rate-limit, etc."
-                            />
-                            <Button type="button" onClick={addMiddleware}>
-                              <Plus className="w-4 h-4" />
-                            </Button>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <Input
+                                id="middleware"
+                                value={middlewareInput}
+                                onChange={(e) => setMiddlewareInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addMiddleware();
+                                  }
+                                }}
+                                placeholder="compress, rate-limit, etc."
+                              />
+                              <Button type="button" onClick={addMiddleware}>
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            {existingMiddlewares.length > 0 && (
+                              <div className="flex gap-2 items-center">
+                                <select
+                                  className="border rounded px-2 py-1 text-sm"
+                                  value={availableMiddleware}
+                                  onChange={(e) => setAvailableMiddleware(e.target.value)}
+                                >
+                                  <option value="">Select middleware</option>
+                                  {existingMiddlewares
+                                    .filter((mw) => !selectedMiddlewares.includes(mw))
+                                    .map((mw) => (
+                                      <option key={mw} value={mw}>
+                                        {mw}
+                                      </option>
+                                    ))}
+                                </select>
+                                <Button type="button" variant="outline" onClick={addMiddlewareFromList} disabled={!availableMiddleware}>
+                                  Add
+                                </Button>
+                              </div>
+                            )}
                           </div>
                           {selectedMiddlewares.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -528,7 +727,9 @@ export default function AddReverseProxy({
                       height="500px"
                       defaultLanguage="yaml"
                       value={yamlContent || generateDefaultYaml()}
-                      onChange={(value) => setYamlContent(value || '')}
+                      onChange={(value) => {
+                        setYamlContent(value || '');
+                      }}
                       theme="vs-dark"
                       options={{
                         minimap: { enabled: false },
@@ -573,6 +774,7 @@ export default function AddReverseProxy({
 
 function generateYaml(
   name: string,
+  serviceName: string,
   hostname: string,
   backends: string[],
   entryPoints: string[],
@@ -585,11 +787,12 @@ function generateYaml(
     stickySession: boolean;
     healthCheckPath: string;
     healthCheckInterval: string;
+    serversTransport?: string;
   }
 ): string {
   const router: any = {
     rule: `Host(\`${hostname}\`)`,
-    service: name,
+    service: serviceName || name,
     entryPoints: entryPoints,
   };
 
@@ -609,6 +812,7 @@ function generateYaml(
     loadBalancer: {
       servers: backends.map((url) => ({ url })),
       passHostHeader: options.passHostHeader,
+      ...(options.serversTransport ? { serversTransport: options.serversTransport } : {}),
     },
   };
 
@@ -633,7 +837,7 @@ function generateYaml(
         [name]: router,
       },
       services: {
-        [name]: service,
+        [serviceName || name]: service,
       },
     },
   };
@@ -642,26 +846,50 @@ function generateYaml(
 }
 
 function generateDefaultYaml(): string {
-  return `http:
-  routers:
-    my-service:
-      rule: "Host(\`example.com\`)"
-      service: my-service
-      entryPoints:
-        - web
-        - websecure
-      tls: {}
-  
-  services:
-    my-service:
-      loadBalancer:
-        servers:
-          - url: "http://192.168.1.10:8080"
-        passHostHeader: true
-`;
+  return generateYaml(
+    DEFAULT_VALUES.name || 'my-service',
+    DEFAULT_VALUES.serviceName || DEFAULT_VALUES.name || 'my-service',
+    DEFAULT_VALUES.hostname || 'example.com',
+    [],
+    DEFAULT_VALUES.entryPoints.split(',').filter(Boolean),
+    DEFAULT_VALUES.tls,
+    [],
+    {
+      priority: DEFAULT_VALUES.priority,
+      certResolver: DEFAULT_VALUES.certResolver,
+      passHostHeader: DEFAULT_VALUES.passHostHeader,
+      stickySession: DEFAULT_VALUES.stickySession,
+      healthCheckPath: DEFAULT_VALUES.healthCheckPath,
+      healthCheckInterval: DEFAULT_VALUES.healthCheckInterval,
+    }
+  );
 }
 
 function extractHostname(rule: string): string {
-  const match = rule.match(/Host\(`([^`]+)`\)/);
+  const match =
+    rule.match(/Host\(`?([^`]+)`?\)/) ||
+    rule.match(/Host\("([^"]+)"\)/) ||
+    rule.match(/Host\('([^']+)'\)/);
   return match ? match[1] : '';
+}
+
+function generateYamlFromPayload(payload: RulePayload): string {
+  return generateYaml(
+    payload.name,
+    payload.serviceName || payload.name,
+    payload.hostname,
+    payload.backendUrl || [],
+    payload.entryPoints || [],
+    payload.tls,
+    payload.middlewares || [],
+    {
+      priority: payload.priority || 0,
+      certResolver: payload.certResolver || '',
+      passHostHeader: payload.passHostHeader ?? true,
+      stickySession: payload.stickySession ?? false,
+      healthCheckPath: payload.healthCheckPath || '',
+      healthCheckInterval: payload.healthCheckInterval || '',
+      serversTransport: payload.serversTransport,
+    }
+  );
 }

@@ -69,6 +69,12 @@ export async function createRule(ctx, input) {
     err.status = 400;
     throw err;
   }
+  if (!rule.serviceName) {
+    rule.serviceName = rule.name;
+  }
+  if (!rule.serviceName) {
+    rule.serviceName = rule.name;
+  }
 
   const meta = await loadMetadata(ctx.metadataPath);
   if (meta.rules.some(r => r.name === rule.name)) {

@@ -21,6 +21,7 @@ import { normalizeRule, validateRule } from './validation.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const log = createLogger(config.logLevel);
+let watcherRef = null;
 
 async function syncFromDisk() {
   await initStorage(config);
@@ -33,8 +34,13 @@ async function syncFromDisk() {
   return rules;
 }
 
-export function startFileWatcher() {
-  const watcher = chokidar.watch(path.join(config.dynamicPath, '*.{yaml,yml}'), {
+export function startFileWatcher(dynamicPath = config.dynamicPath) {
+  if (watcherRef) {
+    watcherRef.close().catch(() => {});
+    watcherRef = null;
+  }
+
+  const watcher = chokidar.watch(path.join(dynamicPath, '*.{yaml,yml}'), {
     persistent: true,
     ignoreInitial: true,
     depth: 0
@@ -54,8 +60,22 @@ export function startFileWatcher() {
     .on('unlink', debouncedSync)
     .on('error', (err) => log.error('Watcher error', { error: err.message }));
 
-  log.info('File watcher started', { path: config.dynamicPath });
+  log.info('File watcher started', { path: dynamicPath });
+  watcherRef = watcher;
   return watcher;
+}
+
+export async function updateDynamicPath(newPath) {
+  if (!newPath || typeof newPath !== 'string') {
+    const err = new Error('Invalid path');
+    err.status = 400;
+    throw err;
+  }
+  config.dynamicPath = newPath;
+  await ensureDir(config.dynamicPath);
+  const rules = await syncFromDisk();
+  startFileWatcher(config.dynamicPath);
+  return rules;
 }
 
 export async function createApp() {
@@ -178,6 +198,16 @@ export async function createApp() {
     try {
       const rules = await syncFromDisk();
       res.json({ count: rules.length });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post('/api/config/path', async (req, res, next) => {
+    try {
+      const newPath = req.body?.path;
+      const rules = await updateDynamicPath(newPath);
+      res.json({ configPath: config.dynamicPath, count: rules.length });
     } catch (err) {
       next(err);
     }

@@ -1,8 +1,9 @@
 {
   "rules": [
     {
-      "id": "e6e50c01-31fd-4920-aa1b-4e090fcae4ab",
+      "id": "6d33be0e-0704-40db-a1e7-4ee016b1eb73",
       "name": "api",
+      "serviceName": "api",
       "hostname": "api.vm.local",
       "backendUrl": [
         "http://10.0.0.20:9000"
@@ -22,8 +23,9 @@
       "fileName": "api.yaml"
     },
     {
-      "id": "ce223f9e-1b2e-4b8b-86af-2e1d04dabb08",
+      "id": "e23592db-5c3c-44d9-87c6-8fec0cc4b44b",
       "name": "app",
+      "serviceName": "app",
       "hostname": "app.vm.local",
       "backendUrl": [
         "http://10.0.0.10:8080",
@@ -40,7 +42,7 @@
       "yamlContent": "http:\n  routers:\n    app:\n      rule: Host(`app.vm.local`)\n      service: app\n      entryPoints:\n        - web\n        - websecure\n      middlewares:\n        - compress\n      tls:\n        certResolver: letsencrypt\n  services:\n    app:\n      loadBalancer:\n        servers:\n          - url: http://10.0.0.10:8080\n          - url: http://10.0.0.11:8080\n        passHostHeader: true\n        healthCheck:\n          path: /health\n          interval: 30s\n",
       "validationErrors": [],
       "isValid": true,
-      "lastModified": "2026-01-17T23:59:38.548Z",
+      "lastModified": "2026-01-18T00:22:32.046Z",
       "certResolver": "letsencrypt",
       "passHostHeader": true,
       "stickySession": false,
@@ -49,8 +51,58 @@
       "fileName": "app.yaml"
     },
     {
-      "id": "f3aeb9ba-36f7-46cb-b735-1f063ddecc58",
+      "id": "faed2f03-bbc6-4a09-a44a-3756c15619f3",
+      "name": "grafana-rtr",
+      "serviceName": "grafana-rtr",
+      "hostname": "grafana.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_CRITICAL\" }}:9823"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-no-auth"
+      ],
+      "yamlContent": "http:\n  routers:\n    grafana-rtr:\n      rule: Host(`grafana.{{ env \"DOMAINNAME_1\" }}`)\n      service: grafana-rtr\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-no-auth\n      tls:\n        certResolver: dns-cloudflare\n  services:\n    grafana-rtr:\n      loadBalancer:\n        servers:\n          - url: http://{{ env \"SERVERIP_CRITICAL\" }}:9823\n        serversTransport: grafana\n        passHostHeader: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-18T00:22:34.684Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "serversTransport": "grafana",
+      "fileName": "grafana-rtr.yaml"
+    },
+    {
+      "id": "f89e6cb0-1bd1-45e7-8a96-9e6f90e9dc8b",
+      "name": "opencloud-rtr",
+      "serviceName": "opencloud-rtr",
+      "hostname": "opencloud.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9201",
+        "https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9203"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [],
+      "yamlContent": "http:\n  routers:\n    opencloud-rtr:\n      rule: Host(`opencloud.{{ env \"DOMAINNAME_1\" }}`)\n      service: opencloud-rtr\n      entryPoints:\n        - websecure\n      tls:\n        certResolver: dns-cloudflare\n  services:\n    opencloud-rtr:\n      loadBalancer:\n        servers:\n          - url: https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9201\n          - url: https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9203\n        serversTransport: opencloud\n        passHostHeader: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-18T01:21:35.060Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "serversTransport": "opencloud",
+      "fileName": "opencloud-rtr.yaml"
+    },
+    {
+      "id": "0873990a-b4b7-4227-858f-744adccd11f8",
       "name": "asustor-rtr",
+      "serviceName": "asustor-svc",
       "hostname": "asus.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://{{ env \"SERVERIP_NAS\" }}:1739"
@@ -69,11 +121,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "asus",
       "fileName": "rule-asustor.yml"
     },
     {
-      "id": "13703a10-350d-45d0-9f3e-0f056e2ab045",
+      "id": "9068e249-5776-4657-9d9e-c1ee8fa047c4",
       "name": "homeassistant-rtr",
+      "serviceName": "homeassistant-svc",
       "hostname": "homeassistant.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://10.87.111.56:8123"
@@ -92,11 +146,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "homeassistant",
       "fileName": "rule-homeassistant.yml"
     },
     {
-      "id": "3be31197-ccef-47a6-99f1-d7b199be2f33",
+      "id": "86047aa9-8afb-44ff-9c52-8db9e4a40c59",
       "name": "pbs-rtr",
+      "serviceName": "pbs-svc",
       "hostname": "pbs.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://10.87.111.240:8007"
@@ -115,11 +171,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "pbs",
       "fileName": "rule-pbs.yml"
     },
     {
-      "id": "7b8001ec-18a1-4ad9-9f75-3a990d817994",
+      "id": "f4e916d1-2bea-4117-9d14-d5e0748da255",
       "name": "pihole-rtr",
+      "serviceName": "pihole-svc",
       "hostname": "pihole.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://10.87.111.239/"
@@ -138,8 +196,9 @@
       "fileName": "rule-pihole.yml"
     },
     {
-      "id": "7640f63d-5161-40d9-aecd-8ea4504280ad",
+      "id": "875809d2-15ba-4063-bb6f-3601514a9d89",
       "name": "proxmox-rtr",
+      "serviceName": "proxmox-svc",
       "hostname": "pve.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://10.87.111.241:8006"
@@ -158,11 +217,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "pve",
       "fileName": "rule-proxmox-cluster.yml"
     },
     {
-      "id": "ae3ddf9e-009a-4e2c-aa31-8c2fd2fec8d7",
+      "id": "4a991b04-ed55-4147-8dd9-a6202ea6660c",
       "name": "authelia-rtr",
+      "serviceName": "authelia-svc",
       "hostname": "auth.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:9091"
@@ -181,11 +242,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "authelia",
       "fileName": "vm-critical-authelia.yml"
     },
     {
-      "id": "b8dd0dfa-10c3-475d-9097-366763f221ad",
+      "id": "faed2f03-bbc6-4a09-a44a-3756c15619f3",
       "name": "grafana-rtr",
+      "serviceName": "grafana-svc",
       "hostname": "grafana.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:9823"
@@ -204,11 +267,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "grafana",
       "fileName": "vm-critical-grafana.yml"
     },
     {
-      "id": "eb2b544a-2add-48bf-a056-75bece8f9315",
+      "id": "ff715169-163c-450f-a5a0-b11343985f37",
       "name": "influxdb-rtr",
+      "serviceName": "influxdb-svc",
       "hostname": "influx.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:6580"
@@ -227,11 +292,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "influxdb",
       "fileName": "vm-critical-influxdb.yml"
     },
     {
-      "id": "a8445434-0d0c-4460-8738-023a72fbf0ce",
+      "id": "d1ee8c52-d0ab-45e2-840e-000115b1ac86",
       "name": "portainer-rtr",
+      "serviceName": "portainer-svc",
       "hostname": "portainer.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:9000"
@@ -250,11 +317,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "portainer",
       "fileName": "vm-critical-portainer.yml"
     },
     {
-      "id": "0665a1a3-05d1-4563-a960-b09eb6a06841",
+      "id": "c8b5ddfd-a927-4184-92c3-97d7cc9d9570",
       "name": "prometheus-rtr",
+      "serviceName": "prometheus-svc",
       "hostname": "prometheus.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:9090"
@@ -273,11 +342,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "prometheus",
       "fileName": "vm-critical-prometheus.yml"
     },
     {
-      "id": "d5e08e05-ed23-4768-9520-600e536ec006",
+      "id": "cff3859a-f940-432e-99d1-0f7f059d5ee6",
       "name": "traefik-rtr",
+      "serviceName": "traefik-svc",
       "hostname": "traefik.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:8080"
@@ -298,8 +369,9 @@
       "fileName": "vm-critical-traefik-db.yml"
     },
     {
-      "id": "165a12ba-8716-4412-8e87-a7a467161c67",
+      "id": "b6666c07-fe26-4ffe-964e-d3b1795735f0",
       "name": "uptime-rtr",
+      "serviceName": "uptime-svc",
       "hostname": "uptime.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:3001"
@@ -318,11 +390,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "uptime",
       "fileName": "vm-critical-uptime-kuma.yml"
     },
     {
-      "id": "47c2cbe7-df97-485e-865d-e06dfbbbe4fd",
+      "id": "02018951-82e1-4b57-9986-a3b178697ef1",
       "name": "vaultwarden-rtr",
+      "serviceName": "vaultwarden-svc",
       "hostname": "vault.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_CRITICAL\" }}:4595"
@@ -343,8 +417,9 @@
       "fileName": "vm-critical-vaultwarden.yml"
     },
     {
-      "id": "75792c0f-1f7c-46f5-ab0e-5f12c585d8bf",
+      "id": "ade3a879-1b9f-421d-84c1-d21827730d1e",
       "name": "archivebox-rtr",
+      "serviceName": "archivebox-svc",
       "hostname": "archivebox.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:7998"
@@ -363,11 +438,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "archivebox",
       "fileName": "vm-development-archivebox.yml"
     },
     {
-      "id": "add4d361-89a1-4fc0-a325-ab27bfe4d276",
+      "id": "93d4b5b8-03d2-46c5-9e66-b1bc0509d811",
       "name": "capso-rtr",
+      "serviceName": "capso-svc",
       "hostname": "capso.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1003"
@@ -386,11 +463,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "capso",
       "fileName": "vm-development-capso.yml"
     },
     {
-      "id": "35f80d59-f96c-4bf5-a98d-34b820a3f625",
+      "id": "52392808-435c-4006-ab76-dc4e8fd5c2d7",
       "name": "changedetection-rtr",
+      "serviceName": "changedetection-svc",
       "hostname": "changedetection.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5000"
@@ -409,11 +488,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "changedetection",
       "fileName": "vm-development-changedetection.yml"
     },
     {
-      "id": "13e127c6-de98-4861-9963-e971c0cee0f7",
+      "id": "a9d8d9cc-bfc1-4d4d-9926-94efa7562e04",
       "name": "ghost-rtr",
+      "serviceName": "ghost-svc",
       "hostname": "ghost.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8282"
@@ -432,11 +513,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "ghost",
       "fileName": "vm-development-ghost.yml"
     },
     {
-      "id": "63a27b01-b6b7-46ab-b878-931c07b31f6d",
+      "id": "0a50115e-0669-4792-b4fa-4bc075f7e7f8",
       "name": "gokapi-rtr",
+      "serviceName": "gokapi-svc",
       "hostname": "gokapi.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://{{ env \"SERVERIP_DEVELOPMENT\" }}:53842"
@@ -455,11 +538,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "gokapi",
       "fileName": "vm-development-gokapi.yml"
     },
     {
-      "id": "97119b0d-b8d0-491a-9f0a-c3de5dfa7cdf",
+      "id": "5c71f12b-3507-4b84-bd2c-4aee6ace4a52",
       "name": "grist-rtr",
+      "serviceName": "grist-svc",
       "hostname": "grist.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8484"
@@ -478,11 +563,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "grist",
       "fileName": "vm-development-grist.yml"
     },
     {
-      "id": "fc7be624-b0c6-4a06-8a7c-981ecb21a6f4",
+      "id": "6f21b577-0df9-4547-8450-7b0120e3932a",
       "name": "guacamole-rtr",
+      "serviceName": "guacamole-svc",
       "hostname": "guacamole.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:8020"
@@ -501,11 +588,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "guacamole",
       "fileName": "vm-development-guacamole.yml"
     },
     {
-      "id": "e8dba761-13f9-4071-9b24-ccb2278e7864",
+      "id": "8192217d-a7b6-4e39-a227-bd0934a722c5",
       "name": "immich-rtr",
+      "serviceName": "immich-svc",
       "hostname": "immich.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:2283"
@@ -522,11 +611,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "immich",
       "fileName": "vm-development-immich.yml"
     },
     {
-      "id": "37652c2a-7afa-44a5-bb4d-6665e2f32149",
+      "id": "58c34880-9925-4d58-a6ce-c97950c2ade3",
       "name": "kaneo-api-rtr",
+      "serviceName": "kaneo-api-svc",
       "hostname": "kaneo-api.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1337"
@@ -543,11 +634,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "kaneo-api",
       "fileName": "vm-development-kaneo-api.yml"
     },
     {
-      "id": "4a2e252f-77ad-403a-ad24-8c31ffe985f5",
+      "id": "3aa616f9-f058-41fd-98f5-00cff658c608",
       "name": "kaneo-rtr",
+      "serviceName": "kaneo-svc",
       "hostname": "kaneo.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5173"
@@ -564,11 +657,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "kaneo",
       "fileName": "vm-development-kaneo.yml"
     },
     {
-      "id": "2e492e75-52fc-4f22-9c25-7592b35b888d",
+      "id": "1111b527-3def-4efc-844c-c265be190395",
       "name": "memos-rtr",
+      "serviceName": "memos-svc",
       "hostname": "memos.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:5230"
@@ -587,11 +682,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "memos",
       "fileName": "vm-development-memos.yml"
     },
     {
-      "id": "690c034e-7070-4d91-90a1-7103727311c0",
+      "id": "2e831562-0dda-4a33-b4c9-389377ad4734",
       "name": "minio-rtr",
+      "serviceName": "minio-svc",
       "hostname": "minio.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:43077"
@@ -610,11 +707,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "minio",
       "fileName": "vm-development-minio.yml"
     },
     {
-      "id": "e12d9aae-ef88-46a0-a17d-f04b6fa13fcb",
+      "id": "f89e6cb0-1bd1-45e7-8a96-9e6f90e9dc8b",
       "name": "opencloud-rtr",
+      "serviceName": "opencloud-svc",
       "hostname": "opencloud.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://{{ env \"SERVERIP_DEVELOPMENT\" }}:9203"
@@ -631,11 +730,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "opencloud",
       "fileName": "vm-development-opencloud.yml"
     },
     {
-      "id": "92bbf058-659a-468d-8abe-9f15be3003ee",
+      "id": "682d9ac2-c45c-4d1e-b528-9ad51e13ee07",
       "name": "termix-rtr",
+      "serviceName": "termix-svc",
       "hostname": "termix.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:9123"
@@ -654,11 +755,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "termix",
       "fileName": "vm-development-termix.yml"
     },
     {
-      "id": "98a44fd2-2bd6-4bb3-be3e-60097ca4d5e4",
+      "id": "efe685de-9cab-440c-8fd0-2fcec8c35a0c",
       "name": "bazarr-rtr",
+      "serviceName": "bazarr-svc",
       "hostname": "bazarr.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:6767"
@@ -677,11 +780,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "bazarr",
       "fileName": "vm-download-bazarr.yml"
     },
     {
-      "id": "755b2336-13d2-4138-b9e7-f7b744615009",
+      "id": "f6e305b9-a822-4a9a-841a-c69d5e5dcb8b",
       "name": "jellyseerr-rtr",
+      "serviceName": "jellyseerr-svc",
       "hostname": "jellyseerr.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:5055"
@@ -700,11 +805,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "jellyseerr",
       "fileName": "vm-download-jellyserr.yml"
     },
     {
-      "id": "10311382-e665-4f83-9146-ebd0f58ea0af",
+      "id": "3c063b98-8c9b-43a0-afcc-a2326071baf5",
       "name": "metube-rtr",
+      "serviceName": "metube-svc",
       "hostname": "metube.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8081"
@@ -723,11 +830,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "metube",
       "fileName": "vm-download-metube.yml"
     },
     {
-      "id": "7086441f-9641-446d-bb45-6b8247f0d4f4",
+      "id": "166b416f-e54a-4631-b120-0b0dc9c90f5f",
       "name": "pbittorrent-rtr",
+      "serviceName": "pbittorrent-svc",
       "hostname": "pbittorrent.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8086"
@@ -746,11 +855,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "pbittorrent",
       "fileName": "vm-download-pbittorrent.yml"
     },
     {
-      "id": "10f148cf-d539-4b95-939f-0fde92d4d6bb",
+      "id": "28aa547e-bc81-47cf-987e-73b3bbd26df2",
       "name": "pinchflat-rtr",
+      "serviceName": "pinchflat-svc",
       "hostname": "pinchflat.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8945"
@@ -769,11 +880,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "pinchflat",
       "fileName": "vm-download-pinchflat.yml"
     },
     {
-      "id": "36f501da-3258-43bb-8386-90fa48176be0",
+      "id": "c1b82c17-1958-41f9-bdf1-5b63b208b4ee",
       "name": "prowlarr-rtr",
+      "serviceName": "prowlarr-svc",
       "hostname": "prowlarr.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:9696"
@@ -792,11 +905,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "prowlarr",
       "fileName": "vm-download-prowlarr.yml"
     },
     {
-      "id": "19fdeaf4-cdfc-4b91-8f0d-7f13398d9276",
+      "id": "62e2dc14-fd64-49ba-9dbd-412d77cb9bf3",
       "name": "qbittorrent-rtr",
+      "serviceName": "qbittorrent-svc",
       "hostname": "qbittorrent.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8085"
@@ -815,11 +930,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "qbittorrent",
       "fileName": "vm-download-qbittorrent.yml"
     },
     {
-      "id": "e69fb056-d1e8-4a90-b7b7-ed1a6945758b",
+      "id": "af69a89a-10bc-45ca-a959-335a713e090b",
       "name": "radarr-rtr",
+      "serviceName": "radarr-svc",
       "hostname": "radarr.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:7878"
@@ -838,11 +955,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "radarr",
       "fileName": "vm-download-radarr.yml"
     },
     {
-      "id": "d0bd037c-5c97-4b1d-b74b-4cc55cce9244",
+      "id": "44f2cbbe-bd21-49a1-a72f-1b27eb9fa6e9",
       "name": "rbittorrent-rtr",
+      "serviceName": "rbittorrent-svc",
       "hostname": "rbittorrent.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8087"
@@ -861,11 +980,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "rbittorrent",
       "fileName": "vm-download-rbittorrent.yml"
     },
     {
-      "id": "afef07a8-643b-435f-9306-aa84bbeb2181",
+      "id": "8424f141-982a-49b9-8bae-83f63de7606d",
       "name": "readarr-rtr",
+      "serviceName": "readarr-svc",
       "hostname": "readarr.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8787"
@@ -884,11 +1005,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "readarr",
       "fileName": "vm-download-readarr.yml"
     },
     {
-      "id": "7107c30f-cf02-431f-b6e1-9421c4d3a9b2",
+      "id": "ef58c558-5ffc-4a84-96d9-1563bd12162d",
       "name": "sonarr-rtr",
+      "serviceName": "sonarr-svc",
       "hostname": "sonarr.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_MEDIA\" }}:8989"
@@ -907,11 +1030,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "sonarr",
       "fileName": "vm-download-sonarr.yml"
     },
     {
-      "id": "4b02379f-41b4-49ad-bb6d-2a6d47cc4e6d",
+      "id": "7b091c73-8d4a-4476-b417-814552ea18d9",
       "name": "landing-page-rtr",
+      "serviceName": "landing-page-svc",
       "hostname": "{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:2001"
@@ -930,11 +1055,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "landing-page",
       "fileName": "vm-production-landing-page.yml"
     },
     {
-      "id": "02c56b3e-4fb1-4f17-8612-b430065c89f0",
+      "id": "603c5535-8478-4ded-8f73-3492a7d96daa",
       "name": "landing-page-rtr-http",
+      "serviceName": "landing-page-svc",
       "hostname": "{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:2001"
@@ -952,11 +1079,13 @@
       "lastModified": "2026-01-11T09:16:46.000Z",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "landing-page",
       "fileName": "vm-production-landing-page.yml"
     },
     {
-      "id": "db36b4cb-8153-4b18-a215-e1b6368b52a7",
+      "id": "c9e299a2-d690-4e84-9846-9024dddeda2c",
       "name": "money-99-savior-rtr",
+      "serviceName": "money-99-savior-svc",
       "hostname": "money-99-savior.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:5000"
@@ -975,11 +1104,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "money-99-savior",
       "fileName": "vm-production-money-99-savior.yml"
     },
     {
-      "id": "a2d340ce-a33d-43e6-b5f2-f33dc1aba6c8",
+      "id": "7f5e60dc-42ab-4e67-a640-60d4baa6c65f",
       "name": "n8n-rtr",
+      "serviceName": "n8n-svc",
       "hostname": "n8n.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:5678"
@@ -1001,8 +1132,9 @@
       "fileName": "vm-production-n8n.yml"
     },
     {
-      "id": "e1b778db-2efd-470e-a320-1b27ee6a666f",
+      "id": "35fbcef1-592d-420b-936d-3ad96df2fc48",
       "name": "plausible-rtr",
+      "serviceName": "plausible-svc",
       "hostname": "plausible.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:808"
@@ -1022,8 +1154,9 @@
       "fileName": "vm-production-plausible.yml"
     },
     {
-      "id": "09b861e4-3705-429c-b5cb-b94dd5156b24",
+      "id": "3004908f-5a7f-4d31-81af-bffdc472b506",
       "name": "pocketbase-rtr",
+      "serviceName": "pocketbase-svc",
       "hostname": "pocketbase.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:8800"
@@ -1040,11 +1173,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "pocketbase",
       "fileName": "vm-production-pocketbase.yml"
     },
     {
-      "id": "085ea749-3576-463a-ae38-1a2d1ba961b8",
+      "id": "4cbe4bcb-d594-4a74-8ed6-f7d51af1f47e",
       "name": "onetable-rtr",
+      "serviceName": "onetable-svc",
       "hostname": "onetable.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_PRODUCTION\" }}:1001"
@@ -1063,11 +1198,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "onetable",
       "fileName": "vm-production-thought-record.yml"
     },
     {
-      "id": "5c973fa1-8b70-4d06-b580-bfff3788b74c",
+      "id": "f624037e-6e4b-4fa7-aaf8-ab2a8b15cf86",
       "name": "audiobookshelf-rtr",
+      "serviceName": "audiobookshelf-svc",
       "hostname": "audiobookshelf.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_STREAMING\" }}:13378"
@@ -1086,11 +1223,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "audiobookshelf",
       "fileName": "vm-streaming-audiobookshelf.yml"
     },
     {
-      "id": "74930b9e-8b2a-4ed1-86a1-436e409e8fc4",
+      "id": "881d4101-455c-4d74-8bfa-77ce362e68a1",
       "name": "jellyfin-rtr",
+      "serviceName": "jellyfin-svc",
       "hostname": "jolyfin.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_STREAMING\" }}:8096"
@@ -1107,11 +1246,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "jellyfin",
       "fileName": "vm-streaming-jellyfin.yml"
     },
     {
-      "id": "0f0d2811-0132-40b6-bdc7-07edc77cb700",
+      "id": "8e5cff8a-b1c8-4afe-872a-bc84e9cfc8a7",
       "name": "actualbudget-rtr",
+      "serviceName": "actualbudget-svc",
       "hostname": "actual.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:5006"
@@ -1130,11 +1271,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "actualbudget",
       "fileName": "vm-utilities-actualbudget.yml"
     },
     {
-      "id": "288970f0-f17d-4d8e-9640-c528eb511afb",
+      "id": "af8426a0-c673-4efa-8715-78a279dcb5a8",
       "name": "bento-rtr",
+      "serviceName": "bento-svc",
       "hostname": "bento.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:3030"
@@ -1153,11 +1296,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "bento",
       "fileName": "vm-utilities-bentopdf.yml"
     },
     {
-      "id": "252175a4-f898-49cb-b962-596c0dfcf33b",
+      "id": "fa120532-d3a4-4c3d-81b6-30ea511cd0f8",
       "name": "beszel-rtr",
+      "serviceName": "beszel-svc",
       "hostname": "beszel.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:8090"
@@ -1176,11 +1321,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "beszel",
       "fileName": "vm-utilities-beszel-hub.yml"
     },
     {
-      "id": "dda4f798-550d-4511-9c75-07c7ef5a8138",
+      "id": "169aec08-32a8-4a8c-aeb2-fa81649125bd",
       "name": "bichon-rtr",
+      "serviceName": "bichon-svc",
       "hostname": "bichon.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:15630"
@@ -1199,11 +1346,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "bichon",
       "fileName": "vm-utilities-bichon.yml"
     },
     {
-      "id": "e6ddef58-5899-4f87-9892-9d97582b8719",
+      "id": "2780ecde-74d3-49c1-94aa-374849cc6504",
       "name": "databasus-rtr",
+      "serviceName": "databasus-svc",
       "hostname": "databasus.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:4005"
@@ -1222,11 +1371,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "databasus",
       "fileName": "vm-utilities-databasus.yml"
     },
     {
-      "id": "21b91d81-3e46-4202-97e2-e48ccacc867a",
+      "id": "d7922bf7-0a16-45ff-bbc1-30de42521e72",
       "name": "dawarich-rtr",
+      "serviceName": "dawarich-svc",
       "hostname": "dawarich.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:5656"
@@ -1245,11 +1396,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "dawarich",
       "fileName": "vm-utilities-dawarich.yml"
     },
     {
-      "id": "56315707-2e48-437c-93f8-51356742b8f2",
+      "id": "a965aa15-24eb-447c-a3ab-dd9d0c8b396c",
       "name": "firefox-rtr",
+      "serviceName": "firefox-svc",
       "hostname": "firefox.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:5800"
@@ -1268,11 +1421,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "firefox",
       "fileName": "vm-utilities-firefox.yml"
     },
     {
-      "id": "d9560f4b-ff9c-4ae7-972c-72daf34fa085",
+      "id": "e669b3d3-f0b0-4d8b-9009-4cbedc02e056",
       "name": "gmailcleaner-rtr",
+      "serviceName": "gmailcleaner-svc",
       "hostname": "gmailcleaner.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:8766"
@@ -1291,11 +1446,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "gmailcleaner",
       "fileName": "vm-utilities-gmailcleaner.yml"
     },
     {
-      "id": "b2b6ab64-4737-4e42-a74c-2c16ac4ab8a3",
+      "id": "f16af2ea-d561-443f-9714-5dd8fc5309ce",
       "name": "hoarder-rtr",
+      "serviceName": "hoarder-svc",
       "hostname": "hoarder.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:3001"
@@ -1312,11 +1469,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "hoarder",
       "fileName": "vm-utilities-hoarder.yml"
     },
     {
-      "id": "faebfe19-52db-470b-aae1-f480f45d6d2c",
+      "id": "c49aab76-62f2-48b3-981c-c441215a17fc",
       "name": "ittools-rtr",
+      "serviceName": "ittools-svc",
       "hostname": "ittools.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:5203"
@@ -1335,11 +1494,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "ittools",
       "fileName": "vm-utilities-ittools.yml"
     },
     {
-      "id": "c6064317-5c40-40e2-84f6-9422f2952717",
+      "id": "70f48755-37d6-4314-8b3b-0a7752f37e3f",
       "name": "microbin-rtr",
+      "serviceName": "microbin-svc",
       "hostname": "microbin.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:8069"
@@ -1358,11 +1519,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "microbin",
       "fileName": "vm-utilities-microbin.yml"
     },
     {
-      "id": "f909a0d0-6496-4263-8560-0eb1f0a88e63",
+      "id": "bff5383c-88fb-4eef-b29e-9882c6e4b39c",
       "name": "minecraft-rtr",
+      "serviceName": "minecraft-svc",
       "hostname": "minecraft.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:25565"
@@ -1379,11 +1542,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "minecraft",
       "fileName": "vm-utilities-minecraft.yml"
     },
     {
-      "id": "16d61779-0fa4-4bc4-9552-d80f7ddb376d",
+      "id": "de34b6a8-2e30-43c2-aa17-2abcd4e1830a",
       "name": "genai-rtr",
+      "serviceName": "genai-svc",
       "hostname": "genai.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:3005"
@@ -1400,11 +1565,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "genai",
       "fileName": "vm-utilities-openwebui.yml"
     },
     {
-      "id": "b76872c3-d848-4328-b355-f71e3199e65b",
+      "id": "a53aa0b1-6114-43db-ad83-f092de00efca",
       "name": "paperless-ai-rtr",
+      "serviceName": "paperless-ai-svc",
       "hostname": "paperless-ai.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:3728"
@@ -1423,11 +1590,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "paperless-ai",
       "fileName": "vm-utilities-paperless-ai.yml"
     },
     {
-      "id": "249b28eb-05c3-415a-9fed-0e52fcacdb2a",
+      "id": "9852765a-c636-4017-ad35-3d94037605b3",
       "name": "paperless-rag-rtr",
+      "serviceName": "paperless-rag-svc",
       "hostname": "paperless-rag.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:8975"
@@ -1446,11 +1615,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "paperless-rag",
       "fileName": "vm-utilities-paperless-rag.yml"
     },
     {
-      "id": "d09896a6-2f06-4ed8-a49c-776ff7cb069e",
+      "id": "df1c328f-b570-4aa4-928d-35495a5976a7",
       "name": "paperless-rtr",
+      "serviceName": "paperless-svc",
       "hostname": "paperless.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:8008"
@@ -1469,11 +1640,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "paperless",
       "fileName": "vm-utilities-paperless.yml"
     },
     {
-      "id": "9d946a42-43d9-44e2-94d0-22e55f0657a2",
+      "id": "82481f0e-eb45-4afa-ad02-38eff1523b2b",
       "name": "pgadmin-rtr",
+      "serviceName": "pgadmin-svc",
       "hostname": "pg.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:15432"
@@ -1492,11 +1665,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "pgadmin",
       "fileName": "vm-utilities-pgadmin.yml"
     },
     {
-      "id": "e8e0ee8a-9b7c-46fa-af9a-f70023307afa",
+      "id": "a448f5e2-df16-4a85-aff6-08363f77ada0",
       "name": "smokeping-rtr",
+      "serviceName": "smokeping-svc",
       "hostname": "smokeping.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "http://{{ env \"SERVERIP_UTILITIES\" }}:830"
@@ -1515,11 +1690,13 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "smokeping",
       "fileName": "vm-utilities-smokeping.yml"
     },
     {
-      "id": "23882a70-d0aa-4b5f-a54a-c694b0571eed",
+      "id": "a1cabf92-9c19-4fc6-8939-40d138a529d4",
       "name": "syncthing-rtr",
+      "serviceName": "syncthing-svc",
       "hostname": "sync.{{ env \"DOMAINNAME_1\" }}",
       "backendUrl": [
         "https://{{ env \"SERVERIP_UTILITIES\" }}:8384"
@@ -1538,6 +1715,7 @@
       "certResolver": "dns-cloudflare",
       "passHostHeader": true,
       "stickySession": false,
+      "serversTransport": "syncthing",
       "fileName": "vm-utilities-syncthing.yml"
     }
   ]

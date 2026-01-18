@@ -6,24 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Alert, AlertDescription } from './ui/alert';
 
 type DirectorySetupProps = {
-  onLoad: (apiBase: string) => Promise<void>;
+  onLoad: (path?: string) => Promise<void>;
   loading?: boolean;
-  defaultApiBase?: string;
 };
 
-export default function DirectorySetup({ onLoad, loading = false, defaultApiBase = 'http://localhost:3001' }: DirectorySetupProps) {
-  const [apiBase, setApiBase] = useState(defaultApiBase);
+export default function DirectorySetup({ onLoad, loading = false }: DirectorySetupProps) {
+  const [path, setPath] = useState('/config/dynamic');
   const [error, setError] = useState('');
 
   const handleLoad = async () => {
     setError('');
-    if (!apiBase.trim()) {
-      setError('Please enter a valid API base URL');
-      return;
-    }
-
     try {
-      await onLoad(apiBase);
+      await onLoad(path);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to connect';
       setError(message);
@@ -40,7 +34,7 @@ export default function DirectorySetup({ onLoad, loading = false, defaultApiBase
             </div>
             <div>
               <CardTitle className="text-2xl">Traefik Rules Manager</CardTitle>
-              <CardDescription>Connect to your Traefik Rules Manager API</CardDescription>
+              <CardDescription>Select your Traefik dynamic configuration directory</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -50,7 +44,7 @@ export default function DirectorySetup({ onLoad, loading = false, defaultApiBase
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 This application manages Traefik dynamic configuration files. 
-                Point it to your running Traefik Rules Manager API.
+                Choose the directory where your Traefik YAML rules live.
               </AlertDescription>
             </Alert>
           </div>
@@ -58,18 +52,18 @@ export default function DirectorySetup({ onLoad, loading = false, defaultApiBase
           <div className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="directory" className="block">
-                API Base URL
+                Traefik Dynamic Config Path
               </label>
               <Input
                 id="directory"
                 type="text"
-                value={apiBase}
-                onChange={(e) => setApiBase(e.target.value)}
-                placeholder="http://localhost:3001"
+                value={path}
+                onChange={(e) => setPath(e.target.value)}
+                placeholder="/config/dynamic"
                 className="font-mono"
               />
               <p className="text-sm text-gray-500">
-                URL where Traefik Rules Manager API is running
+                Absolute path on the server/container where Traefik watches for dynamic config
               </p>
             </div>
 
@@ -95,7 +89,7 @@ export default function DirectorySetup({ onLoad, loading = false, defaultApiBase
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-0.5">✓</span>
-                <span>API must be reachable from your browser</span>
+                <span>Backend must be reachable (same server/container as this UI)</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-600 mt-0.5">✓</span>

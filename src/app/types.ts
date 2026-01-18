@@ -2,6 +2,7 @@ export type TraefikRule = {
   id: string;
   fileName: string;
   name: string;
+  serviceName?: string;
   hostname: string;
   backendUrl: string[];
   entryPoints: string[];
@@ -22,6 +23,7 @@ export type TraefikRule = {
 
 export type RulePayload = {
   name: string;
+  serviceName?: string;
   hostname: string;
   backendUrl: string[];
   entryPoints: string[];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useForm } from 'react-hook-form';
 import { Plus, X, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -8,6 +8,7 @@ import { Switch } from './ui/switch';
 import { Badge } from './ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import type { RulePayload, TraefikRule } from '../types';
+import { normalizeRuleFromYaml } from '../utils/rules';
 
 type SimpleEditProps = {
   rule: TraefikRule;
@@ -18,6 +19,7 @@ type SimpleEditProps = {
 
 type FormData = {
   name: string;
+  serviceName: string;
   hostname: string;
   entryPoints: string;
   tls: boolean;
@@ -36,29 +38,52 @@ export default function SimpleEdit({
   onCancel,
   existingMiddlewares,
 }: SimpleEditProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const normalized = normalizeRuleFromYaml(rule);
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
     defaultValues: {
-      name: rule.name,
-      hostname: rule.hostname,
-      entryPoints: rule.entryPoints.join(','),
-      tls: rule.tls,
-      priority: rule.priority || 0,
-      certResolver: rule.certResolver || '',
-      passHostHeader: rule.passHostHeader || false,
-      stickySession: rule.stickySession || false,
-      healthCheckPath: rule.healthCheckPath || '',
-      healthCheckInterval: rule.healthCheckInterval || '',
-      serversTransport: rule.serversTransport || '',
+      name: normalized.name,
+      serviceName: normalized.serviceName || normalized.name,
+      hostname: normalized.hostname,
+      entryPoints: normalized.entryPoints.join(','),
+      tls: normalized.tls,
+      priority: normalized.priority || 0,
+      certResolver: normalized.certResolver || '',
+      passHostHeader: normalized.passHostHeader || false,
+      stickySession: normalized.stickySession || false,
+      healthCheckPath: normalized.healthCheckPath || '',
+      healthCheckInterval: normalized.healthCheckInterval || '',
+      serversTransport: normalized.serversTransport || '',
     },
   });
 
-  const [backends, setBackends] = useState<string[]>(rule.backendUrl);
-  const [entryPoints, setEntryPoints] = useState<string[]>(rule.entryPoints);
-  const [selectedMiddlewares, setSelectedMiddlewares] = useState<string[]>(rule.middlewares || []);
+  const [backends, setBackends] = useState<string[]>(normalized.backendUrl || []);
+  const [entryPoints, setEntryPoints] = useState<string[]>(normalized.entryPoints || []);
+  const [selectedMiddlewares, setSelectedMiddlewares] = useState<string[]>(normalized.middlewares || []);
   const [backendInput, setBackendInput] = useState('');
   const [entryPointInput, setEntryPointInput] = useState('');
   const [middlewareInput, setMiddlewareInput] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const norm = normalizeRuleFromYaml(rule);
+    reset({
+      name: norm.name,
+      serviceName: norm.serviceName || norm.name,
+      hostname: norm.hostname,
+      entryPoints: norm.entryPoints.join(','),
+      tls: norm.tls,
+      priority: norm.priority || 0,
+      certResolver: norm.certResolver || '',
+      passHostHeader: norm.passHostHeader || false,
+      stickySession: norm.stickySession || false,
+      healthCheckPath: norm.healthCheckPath || '',
+      healthCheckInterval: norm.healthCheckInterval || '',
+      serversTransport: norm.serversTransport || '',
+    });
+    setBackends(norm.backendUrl || []);
+    setEntryPoints(norm.entryPoints || []);
+    setSelectedMiddlewares(norm.middlewares || []);
+  }, [rule, reset]);
 
   const addBackend = () => {
     if (backendInput.trim() && !backends.includes(backendInput.trim())) {
@@ -106,6 +131,7 @@ export default function SimpleEdit({
 
     const payload: RulePayload = {
       name: data.name,
+      serviceName: data.serviceName || data.name,
       hostname: data.hostname,
       backendUrl: backends,
       entryPoints: entryPoints,
@@ -132,7 +158,7 @@ export default function SimpleEdit({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="name">Rule Name</Label>
+        <Label htmlFor="name">Rule Name (filename)</Label>
         <Input
           id="name"
           {...register('name', { 
@@ -147,6 +173,22 @@ export default function SimpleEdit({
         {errors.name && (
           <p className="text-sm text-red-600">{errors.name.message}</p>
         )}
+      </div>
+
+      {/* Service Name */}
+      <div className="space-y-2">
+        <Label htmlFor="serviceName">Service Name</Label>
+        <Input
+          id="serviceName"
+          {...register('serviceName', { 
+            pattern: {
+              value: /^[a-zA-Z0-9-_]*$/,
+              message: 'Only alphanumeric characters, hyphens, and underscores allowed'
+            }
+          })}
+          placeholder="my-app-service"
+        />
+        <p className="text-sm text-gray-500">Defaults to rule name if left empty.</p>
       </div>
 
       {/* Hostnames */}
