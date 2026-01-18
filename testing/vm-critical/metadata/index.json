@@ -246,6 +246,31 @@
       "fileName": "rule-proxmox-cluster.yml"
     },
     {
+      "id": "be770c1b-3a14-4db0-9500-26f9a014e2d4",
+      "name": "testing-rtr",
+      "serviceName": "testing-svc",
+      "hostname": "testing.{{ env \"DOMAINNAME_1\" }}",
+      "backendUrl": [
+        "http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1234"
+      ],
+      "entryPoints": [
+        "websecure"
+      ],
+      "tls": true,
+      "middlewares": [
+        "chain-authelia"
+      ],
+      "yamlContent": "http:\n  routers:\n    testing-rtr:\n      rule: Host(`testing.{{ env \"DOMAINNAME_1\" }}`)\n      service: testing-svc\n      entryPoints:\n        - websecure\n      middlewares:\n        - chain-authelia\n      tls:\n        certResolver: dns-cloudflare\n  services:\n    testing-svc:\n      loadBalancer:\n        servers:\n          - url: http://{{ env \"SERVERIP_DEVELOPMENT\" }}:1234\n        serversTransport: grist\n        passHostHeader: true\n",
+      "validationErrors": [],
+      "isValid": true,
+      "lastModified": "2026-01-18T04:09:55.810Z",
+      "certResolver": "dns-cloudflare",
+      "passHostHeader": true,
+      "stickySession": false,
+      "serversTransport": "grist",
+      "fileName": "testing-rtr.yaml"
+    },
+    {
       "id": "4a991b04-ed55-4147-8dd9-a6202ea6660c",
       "name": "authelia-rtr",
       "serviceName": "authelia-svc",

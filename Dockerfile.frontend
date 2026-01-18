@@ -1,0 +1,26 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY src ./src
+COPY public ./public
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+
+ENV VITE_API_BASE=http://localhost:3001
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV VITE_API_BASE=http://localhost:3001
+
+COPY --from=builder /app/dist ./dist
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+EXPOSE 4173
+CMD ["npm", "run", "preview", "--", "--host", "--port", "4173"]

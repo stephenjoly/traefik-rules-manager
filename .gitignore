@@ -1,1 +1,14 @@
 node_modules
+.DS_Store
+.env
+.env.local
+npm-debug.log*
+yarn-error.log*
+dist
+coverage
+trm/backups
+trm/metadata
+testing
+traefik
+*.local.yaml
+*.local.yml

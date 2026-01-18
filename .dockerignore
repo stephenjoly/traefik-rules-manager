@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+npm-debug.log*
+yarn-error.log*
+dist
+testing
+traefik
+trm
+Dockerfile.local
+.DS_Store

@@ -1,0 +1,70 @@
+name: Publish Docker Images
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*.*.*"]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_ROOT: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build and push images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            file: Dockerfile
+            context: .
+            port: 3001
+          - name: frontend
+            file: Dockerfile.frontend
+            context: .
+            port: 4173
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create release version string
+        id: build_version
+        run: echo "app_version=v$(date -u +%Y.%m.%d.%H.%M)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize image name
+        id: image
+        run: |
+          IMAGE_BASE="${REGISTRY}/$(echo "${IMAGE_ROOT}" | tr '[:upper:]' '[:lower:]')"
+          echo "IMAGE_BASE=${IMAGE_BASE}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: |
+            ${{ steps.image.outputs.IMAGE_BASE }}-${{ matrix.name }}:latest
+            ${{ steps.image.outputs.IMAGE_BASE }}-${{ matrix.name }}:${{ steps.build_version.outputs.app_version }}
+            ${{ steps.image.outputs.IMAGE_BASE }}-${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+            APP_VERSION=${{ steps.build_version.outputs.app_version }}
