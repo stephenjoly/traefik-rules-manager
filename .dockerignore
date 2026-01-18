@@ -5,7 +5,10 @@ npm-debug.log*
 yarn-error.log*
 dist
 testing
+testing/**
 traefik
+traefik/**
 trm
+trm/**
 Dockerfile.local
 .DS_Store

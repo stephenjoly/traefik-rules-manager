@@ -9,6 +9,8 @@ coverage
 trm/backups
 trm/metadata
 testing
+testing/**
 traefik
+traefik/**
 *.local.yaml
 *.local.yml
