@@ -16,11 +16,11 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV VITE_API_BASE=http://localhost:3001
+ENV PORT=4173
 
+# Serve the prebuilt assets with a lightweight static server
+RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
-COPY package*.json ./
-RUN npm ci --omit=dev
 
 EXPOSE 4173
-CMD ["npm", "run", "preview", "--", "--host", "--port", "4173"]
+CMD ["serve", "-s", "dist", "-l", "4173"]
