@@ -4,10 +4,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY src ./src
-COPY public ./public
-COPY tsconfig*.json ./
 COPY vite.config.ts ./
+COPY postcss.config.mjs ./
+COPY index.html ./
+COPY src ./src
 
 ENV VITE_API_BASE=http://localhost:3001
 RUN npm run build
