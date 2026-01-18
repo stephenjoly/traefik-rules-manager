@@ -7,30 +7,15 @@ export async function ensureDir(dirPath) {
 
 export async function atomicWrite(filePath, content) {
   const dir = path.dirname(filePath);
-  await ensureDir(dir);
-  const tempPath = path.join(dir, `.tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   try {
+    await ensureDir(dir);
+    const tempPath = path.join(dir, `.tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     await fs.writeFile(tempPath, content, 'utf8');
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      // Directory vanished or was not yet created; recreate and retry once
-      await ensureDir(dir);
-      await fs.writeFile(tempPath, content, 'utf8');
-    } else {
-      throw err;
-    }
-  }
-
-  try {
     await fs.rename(tempPath, filePath);
   } catch (err) {
-    if (err.code === 'ENOENT') {
-      // Fallback: write directly if the temp rename failed due to missing path
-      await ensureDir(dir);
-      await fs.writeFile(filePath, content, 'utf8');
-    } else {
-      throw err;
-    }
+    // As a last resort, ensure the directory exists and write directly without temp.
+    await ensureDir(dir);
+    await fs.writeFile(filePath, content, 'utf8');
   }
 }
 
