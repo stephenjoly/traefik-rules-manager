@@ -20,9 +20,17 @@ import { duplicateRule } from './utils/rules';
 
 type View = 'setup' | 'dashboard' | 'add' | 'edit';
 
+function resolveDefaultApiBase() {
+  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE as string;
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:3001`;
+  }
+  return 'http://localhost:3001';
+}
+
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('setup');
-  const [apiBase, setApiBase] = useState<string>(import.meta.env.VITE_API_BASE || 'http://localhost:3001');
+  const [apiBase, setApiBase] = useState<string>(resolveDefaultApiBase());
   const [workingDirectory, setWorkingDirectory] = useState<string>('');
   const [rules, setRules] = useState<TraefikRule[]>([]);
   const [existingMiddlewares, setExistingMiddlewares] = useState<string[]>([]);
