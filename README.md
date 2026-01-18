@@ -32,14 +32,14 @@ npm test
 
 This repo builds and publishes two images to GHCR (via GitHub Actions on `main` and tags):
 
-- `ghcr.io/<owner>/<repo>-backend:latest` – API, port `3001`.
-- `ghcr.io/<owner>/<repo>-frontend:latest` – UI, port `4173`, expects `VITE_API_BASE`.
+- `ghcr.io/stephenjoly/traefik-rules-manager-backend:latest` – API, port `3001`.
+- `ghcr.io/stephenjoly/traefik-rules-manager-frontend:latest` – UI, port `4173`, expects `VITE_API_BASE`.
 
 To pull:
 
 ```bash
-docker pull ghcr.io/<owner>/<repo>-backend:latest
-docker pull ghcr.io/<owner>/<repo>-frontend:latest
+docker pull ghcr.io/stephenjoly/traefik-rules-manager-backend:latest
+docker pull ghcr.io/stephenjoly/traefik-rules-manager-frontend:latest
 ```
 
 ## Quick deploy with Docker Compose
@@ -49,7 +49,7 @@ Create `docker-compose.yml` alongside your Traefik setup:
 ```yaml
 services:
   trm-backend:
-    image: ghcr.io/<owner>/<repo>-backend:latest
+    image: ghcr.io/stephenjoly/traefik-rules-manager-backend:latest
     environment:
       TRAEFIK_DYNAMIC_CONFIG_PATH: /config/dynamic
       TRM_METADATA_PATH: /config/metadata
@@ -65,7 +65,7 @@ services:
     restart: unless-stopped
 
   trm-frontend:
-    image: ghcr.io/<owner>/<repo>-frontend:latest
+    image: ghcr.io/stephenjoly/traefik-rules-manager-frontend:latest
     environment:
       VITE_API_BASE: http://trm-backend:3001
     depends_on:
