@@ -51,7 +51,7 @@ export default function EditRule({
       const backendServers = loadBalancer?.servers?.map((s: any) => s.url).filter(Boolean) || [];
       const tlsEnabled = !!router?.tls;
       const payload: RulePayload = {
-        name: rule.name, // keep filename stable when editing via YAML
+        name: draft?.name || rule.name, // allow renaming via Simple form state
         previousName: rule.name,
         routerName,
         serviceName,
