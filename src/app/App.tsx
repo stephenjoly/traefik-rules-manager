@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import AddReverseProxy from './components/AddReverseProxy';
 import EditRule from './components/EditRule';
 import { RulePayload, TraefikRule } from './types';
+import { Dialog, DialogContent } from './components/ui/dialog';
 import {
   apiCreateRule,
   apiDeleteRule,
@@ -41,6 +42,8 @@ export default function App() {
   const [autoConnectTried, setAutoConnectTried] = useState(false);
   const [draftRule, setDraftRule] = useState<RulePayload | null>(null);
   const [draftTemplateId, setDraftTemplateId] = useState<string | undefined>(undefined);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const mapRule = (rule: any): TraefikRule => ({
     ...rule,
@@ -93,7 +96,7 @@ export default function App() {
   const handleAddProxy = () => {
     setDraftRule(null);
     setDraftTemplateId(undefined);
-    setCurrentView('add');
+    setAddOpen(true);
   };
 
   const handleEditRule = (rule: TraefikRule) => {
@@ -101,7 +104,7 @@ export default function App() {
     setSelectedRule({ ...rule, name: baseName });
     setDraftRule(null);
     setDraftTemplateId(undefined);
-    setCurrentView('edit');
+    setEditOpen(true);
   };
 
   const handleDeleteRule = async (ruleId: string) => {
@@ -186,41 +189,50 @@ export default function App() {
       )}
 
       {currentView === 'dashboard' && (
-        <Dashboard
-          workingDirectory={workingDirectory}
-          rules={rules}
-          onAddProxy={handleAddProxy}
-          onEditRule={handleEditRule}
-          onDeleteRule={handleDeleteRule}
-          onReload={handleReload}
-          onChangeDirectory={() => setCurrentView('setup')}
-          busy={actionLoading}
-        />
-      )}
+        <>
+          <Dashboard
+            workingDirectory={workingDirectory}
+            rules={rules}
+            onAddProxy={handleAddProxy}
+            onEditRule={handleEditRule}
+            onDeleteRule={handleDeleteRule}
+            onReload={handleReload}
+            onChangeDirectory={() => setCurrentView('setup')}
+            busy={actionLoading}
+          />
 
-      {currentView === 'add' && (
-      <AddReverseProxy
-        onSave={handleSaveNewProxy}
-        onCancel={handleBackToDashboard}
-        existingMiddlewares={existingMiddlewares}
-        templates={rules}
-        initialValue={draftRule || undefined}
-        defaultTemplateId={draftTemplateId}
-      />
-      )}
+          <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) handleBackToDashboard(); }}>
+            <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+              <AddReverseProxy
+                onSave={handleSaveNewProxy}
+                onCancel={() => { setAddOpen(false); handleBackToDashboard(); }}
+                existingMiddlewares={existingMiddlewares}
+                templates={rules}
+                initialValue={draftRule || undefined}
+                defaultTemplateId={draftTemplateId}
+              />
+            </DialogContent>
+          </Dialog>
 
-      {currentView === 'edit' && selectedRule && (
-        <EditRule
-          rule={selectedRule}
-          onSave={(payload) => handleSaveEditedRule(selectedRule.id, payload)}
-          onCancel={handleBackToDashboard}
-          existingMiddlewares={existingMiddlewares}
-          onDuplicate={() => {
-            setDraftRule(duplicateRule(selectedRule, rules));
-            setDraftTemplateId(selectedRule.id);
-            setCurrentView('add');
-          }}
-        />
+          {selectedRule && (
+            <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) handleBackToDashboard(); }}>
+              <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+                <EditRule
+                  rule={selectedRule}
+                  onSave={(payload) => handleSaveEditedRule(selectedRule.id, payload)}
+                  onCancel={() => { setEditOpen(false); handleBackToDashboard(); }}
+                  existingMiddlewares={existingMiddlewares}
+                  onDuplicate={() => {
+                    setDraftRule(duplicateRule(selectedRule, rules));
+                    setDraftTemplateId(selectedRule.id);
+                    setEditOpen(false);
+                    setAddOpen(true);
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+        </>
       )}
     </div>
   );

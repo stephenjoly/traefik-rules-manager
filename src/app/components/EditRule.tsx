@@ -106,15 +106,17 @@ export default function EditRule({
     : rule;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Button variant="ghost" onClick={onCancel} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <Button variant="outline" onClick={onDuplicate} className="mb-4 ml-2">
-          Duplicate Rule
-        </Button>
+        <div className="flex items-center gap-2 mb-4">
+          <Button variant="ghost" onClick={onCancel}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <Button variant="outline" onClick={onDuplicate}>
+            Duplicate Rule
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
