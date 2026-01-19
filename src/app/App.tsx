@@ -216,7 +216,7 @@ export default function App() {
           onCancel={handleBackToDashboard}
           existingMiddlewares={existingMiddlewares}
           onDuplicate={() => {
-            setDraftRule(duplicateRule(selectedRule));
+            setDraftRule(duplicateRule(selectedRule, rules));
             setDraftTemplateId(selectedRule.id);
             setCurrentView('add');
           }}

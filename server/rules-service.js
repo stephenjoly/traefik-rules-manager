@@ -112,6 +112,9 @@ export async function updateRule(ctx, id, input) {
 
   const meta = await loadMetadata(ctx.metadataPath);
   let index = meta.rules.findIndex(r => r.id === id);
+  if (index === -1 && rule.previousName) {
+    index = meta.rules.findIndex(r => r.name === rule.previousName);
+  }
   if (index === -1 && rule.name) {
     // Fallback: try matching by name if ids drifted due to resync
     index = meta.rules.findIndex(r => r.name === rule.name);
@@ -129,7 +132,11 @@ export async function updateRule(ctx, id, input) {
     throw err;
   }
 
-  if (meta.rules.some(r => r.name === cleanName && r.id !== id)) {
+  const targetId = meta.rules[index]?.id || id;
+  // ensure we keep the persisted id to avoid churn when we matched by name/previousName
+  rule.id = targetId;
+
+  if (meta.rules.some(r => r.name === cleanName && r.id !== targetId)) {
     const err = new Error('Rule name already exists');
     err.status = 409;
     throw err;

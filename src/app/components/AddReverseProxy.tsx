@@ -121,7 +121,8 @@ export default function AddReverseProxy({
   };
 
   useEffect(() => {
-    if (defaultTemplateId && !selectedTemplateId) {
+    // Only auto-select the default template when we are not prefilled from an initial value (e.g., duplication)
+    if (defaultTemplateId && !selectedTemplateId && !initialValue) {
       setSelectedTemplateId(defaultTemplateId);
     }
     if (initialValue) {
@@ -383,7 +384,7 @@ export default function AddReverseProxy({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Button variant="ghost" onClick={onCancel} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard

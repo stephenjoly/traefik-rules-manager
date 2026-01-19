@@ -17,6 +17,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-border": "var(--border)",
         } as React.CSSProperties
       }
+      position="bottom-center"
+      toastOptions={{
+        className: 'pointer-events-auto',
+        style: { maxWidth: '460px', margin: '0 auto' }
+      }}
       {...props}
     />
   );

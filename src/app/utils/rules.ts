@@ -69,15 +69,30 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
   }
 }
 
-export function duplicateRule(rule: TraefikRule): RulePayload {
-  return ruleToPayload(rule, { copyName: true });
+function uniqueName(base: string, taken: Set<string>): string {
+  let candidate = base;
+  let counter = 1;
+  while (taken.has(candidate)) {
+    candidate = `${base}-${counter}`;
+    counter += 1;
+  }
+  return candidate;
 }
 
-export function ruleToPayload(rule: TraefikRule, opts: { copyName?: boolean } = {}): RulePayload {
+export function duplicateRule(rule: TraefikRule, existing: TraefikRule[] = []): RulePayload {
+  const taken = new Set(existing.map((r) => (r.fileName ? r.fileName.replace(/\.ya?ml$/i, '') : r.name)));
+  return ruleToPayload(rule, { copyName: true, taken });
+}
+
+export function ruleToPayload(
+  rule: TraefikRule,
+  opts: { copyName?: boolean; taken?: Set<string> } = {}
+): RulePayload {
   // Prefer filename base if present
   const baseName = rule.fileName ? rule.fileName.replace(/\.ya?ml$/i, '') : rule.name;
   const payload = normalizeRuleFromYaml(rule);
-  const name = opts.copyName ? `${baseName}-copy` : baseName;
+  const rawName = opts.copyName ? `${baseName}-copy` : baseName;
+  const name = opts.taken ? uniqueName(rawName, opts.taken) : rawName;
   return {
     ...payload,
     name,
