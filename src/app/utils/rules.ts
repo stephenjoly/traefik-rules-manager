@@ -14,6 +14,7 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
     if (!rule.yamlContent) {
       throw new Error('no yaml');
     }
+    const baseName = rule.fileName ? rule.fileName.replace(/\.ya?ml$/i, '') : rule.name;
     const parsed = yaml.load(rule.yamlContent) as any;
     const routerName = Object.keys(parsed?.http?.routers || {})[0] || rule.name;
     const router = parsed?.http?.routers?.[routerName];
@@ -22,7 +23,7 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
     const middlewares = router?.middlewares || [];
 
     return {
-      name: routerName,
+      name: baseName,
       routerName,
       serviceName,
       hostname: router?.rule ? extractHostname(router.rule) : rule.hostname,
@@ -40,7 +41,7 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
     };
   } catch {
     return {
-      name: rule.name,
+      name: rule.fileName ? rule.fileName.replace(/\.ya?ml$/i, '') : rule.name,
       routerName: rule.routerName || rule.name,
       serviceName: rule.serviceName || rule.name,
       hostname: rule.hostname,

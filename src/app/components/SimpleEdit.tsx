@@ -40,7 +40,7 @@ export default function SimpleEdit({
   existingMiddlewares,
 }: SimpleEditProps) {
   const normalized = normalizeRuleFromYaml(rule);
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<FormData>({
     defaultValues: {
       name: normalized.name,
       routerName: normalized.routerName || normalized.name,
@@ -65,6 +65,10 @@ export default function SimpleEdit({
   const [entryPointInput, setEntryPointInput] = useState('');
   const [middlewareInput, setMiddlewareInput] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const tlsValue = watch('tls', normalized.tls);
+  const passHostHeaderValue = watch('passHostHeader', normalized.passHostHeader || false);
+  const stickySessionValue = watch('stickySession', normalized.stickySession || false);
 
   useEffect(() => {
     const norm = normalizeRuleFromYaml(rule);
@@ -122,6 +126,13 @@ export default function SimpleEdit({
   };
 
   const onSubmit = async (data: FormData) => {
+    const toBool = (val: any, fallback: boolean) => {
+      if (val === true || val === false) return val;
+      if (val === 'true') return true;
+      if (val === 'false') return false;
+      return fallback;
+    };
+
     if (backends.length === 0) {
       alert('Please add at least one backend server');
       return;
@@ -139,11 +150,11 @@ export default function SimpleEdit({
       hostname: data.hostname,
       backendUrl: backends,
       entryPoints: entryPoints,
-      tls: data.tls,
+      tls: toBool(data.tls, false),
       priority: data.priority,
       certResolver: data.certResolver,
-      passHostHeader: data.passHostHeader,
-      stickySession: data.stickySession,
+      passHostHeader: toBool(data.passHostHeader, false),
+      stickySession: toBool(data.stickySession, false),
       healthCheckPath: data.healthCheckPath,
       healthCheckInterval: data.healthCheckInterval,
       middlewares: selectedMiddlewares,
@@ -310,8 +321,8 @@ export default function SimpleEdit({
         </div>
         <Switch
           id="tls"
-          {...register('tls')}
-          defaultChecked={rule.tls}
+          checked={Boolean(tlsValue)}
+          onCheckedChange={(val) => setValue('tls', Boolean(val))}
         />
       </div>
 
@@ -403,8 +414,8 @@ export default function SimpleEdit({
               </div>
               <Switch
                 id="passHostHeader"
-                {...register('passHostHeader')}
-                defaultChecked={rule.passHostHeader}
+                checked={Boolean(passHostHeaderValue)}
+                onCheckedChange={(val) => setValue('passHostHeader', Boolean(val))}
               />
             </div>
 
@@ -418,8 +429,8 @@ export default function SimpleEdit({
               </div>
               <Switch
                 id="stickySession"
-                {...register('stickySession')}
-                defaultChecked={rule.stickySession}
+                checked={Boolean(stickySessionValue)}
+                onCheckedChange={(val) => setValue('stickySession', Boolean(val))}
               />
             </div>
 

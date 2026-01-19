@@ -14,6 +14,7 @@ function extractHost(ruleStr) {
 function extractRulesFromYaml(parsed, filePath, idResolver) {
   if (!parsed?.http?.routers) return [];
   const rules = [];
+  const baseName = path.basename(filePath, path.extname(filePath));
 
   for (const [routerName, router] of Object.entries(parsed.http.routers)) {
     const serviceName = router.service || routerName;
@@ -23,7 +24,8 @@ function extractRulesFromYaml(parsed, filePath, idResolver) {
     const backendUrl = service.loadBalancer?.servers?.map(server => server.url).filter(Boolean) || [];
     rules.push({
       id: idResolver(routerName, filePath),
-      name: routerName,
+      name: baseName,
+      routerName,
       serviceName,
       hostname: extractHost(router.rule),
       backendUrl,

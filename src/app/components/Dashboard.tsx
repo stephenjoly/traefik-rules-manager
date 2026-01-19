@@ -282,8 +282,8 @@ export default function Dashboard({
                         </TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{rule.name}</div>
-                            <div className="text-sm text-gray-500 font-mono">{rule.fileName}</div>
+                            <div className="font-medium">{rule.routerName || rule.name}</div>
+                            <div className="text-sm text-gray-500 font-mono">{rule.fileName || `${rule.name}.yaml`}</div>
                           </div>
                         </TableCell>
                         <TableCell>

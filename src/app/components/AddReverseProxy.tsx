@@ -84,6 +84,11 @@ export default function AddReverseProxy({
   const [yamlTouched, setYamlTouched] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
+  const filenameValue = watch('name', DEFAULT_VALUES.name);
+  const tlsValue = watch('tls', true);
+  const passHostHeaderValue = watch('passHostHeader', true);
+  const stickySessionValue = watch('stickySession', false);
+
   const setFromPayload = (payload: RulePayload) => {
     reset({
       name: payload.name,
@@ -166,6 +171,13 @@ export default function AddReverseProxy({
   };
 
   const onSubmitForm = async (data: FormData) => {
+    const toBool = (val: any, fallback: boolean) => {
+      if (val === true || val === false) return val;
+      if (val === 'true') return true;
+      if (val === 'false') return false;
+      return fallback;
+    };
+
     if (!data.hostname.trim()) {
       alert('Please enter a hostname');
       return;
@@ -188,12 +200,12 @@ export default function AddReverseProxy({
       hostname: data.hostname,
       backendUrl: backends,
       entryPoints: entryPoints,
-      tls: data.tls,
+      tls: toBool(data.tls, false),
       middlewares: selectedMiddlewares.length > 0 ? selectedMiddlewares : undefined,
       priority: data.priority,
       certResolver: data.certResolver,
-      passHostHeader: data.passHostHeader,
-      stickySession: data.stickySession,
+      passHostHeader: toBool(data.passHostHeader, true),
+      stickySession: toBool(data.stickySession, false),
       healthCheckPath: data.healthCheckPath,
       healthCheckInterval: data.healthCheckInterval,
       serversTransport: data.serversTransport || undefined
@@ -213,6 +225,16 @@ export default function AddReverseProxy({
       const parsed = yaml.load(yamlContent);
       setYamlError('');
 
+      const filename = filenameValue?.trim() || '';
+      if (!filename) {
+        alert('Please enter a rule name (filename) before saving.');
+        return;
+      }
+      if (!/^[a-zA-Z0-9-_]+$/.test(filename)) {
+        alert('Filename can only include letters, numbers, hyphens, and underscores.');
+        return;
+      }
+
       // Extract basic info from YAML for the rule object
       const config = parsed as any;
       const routerName = Object.keys(config?.http?.routers || {})[0] || 'unnamed';
@@ -222,7 +244,7 @@ export default function AddReverseProxy({
 
       const middlewares = router?.middlewares || [];
       const payload: RulePayload = {
-        name: routerName,
+        name: filename,
         routerName: routerName,
         serviceName: serviceName,
         hostname: router?.rule ? extractHostname(router.rule) : '',
@@ -299,7 +321,7 @@ export default function AddReverseProxy({
       const middlewares = router?.middlewares || [];
 
       const payload: RulePayload = {
-        name: routerName,
+        name: filenameValue?.trim() || routerName,
         routerName,
         serviceName,
         hostname: router?.rule ? extractHostname(router.rule) : '',
@@ -561,8 +583,8 @@ export default function AddReverseProxy({
                       </div>
                       <Switch
                         id="tls"
-                        {...register('tls')}
-                        defaultChecked={true}
+                        checked={Boolean(tlsValue)}
+                        onCheckedChange={(val) => setValue('tls', Boolean(val))}
                       />
                     </div>
                   </div>
@@ -678,8 +700,8 @@ export default function AddReverseProxy({
                           </div>
                           <Switch
                             id="passHostHeader"
-                            {...register('passHostHeader')}
-                            defaultChecked={true}
+                            checked={Boolean(passHostHeaderValue)}
+                            onCheckedChange={(val) => setValue('passHostHeader', Boolean(val))}
                           />
                         </div>
 
@@ -693,8 +715,8 @@ export default function AddReverseProxy({
                           </div>
                           <Switch
                             id="stickySession"
-                            {...register('stickySession')}
-                            defaultChecked={false}
+                            checked={Boolean(stickySessionValue)}
+                            onCheckedChange={(val) => setValue('stickySession', Boolean(val))}
                           />
                         </div>
 
@@ -754,6 +776,24 @@ export default function AddReverseProxy({
 
               <TabsContent value="yaml" className="mt-6">
                 <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Rule Name (used as filename) *</Label>
+                    <Input
+                      id="name"
+                      {...register('name', { 
+                        required: 'Name is required',
+                        pattern: {
+                          value: /^[a-zA-Z0-9-_]+$/,
+                          message: 'Only alphanumeric characters, hyphens, and underscores allowed'
+                        }
+                      })}
+                      placeholder="my-app"
+                    />
+                    {errors.name && (
+                      <p className="text-sm text-red-600">{errors.name.message}</p>
+                    )}
+                  </div>
+
                   <div className="border rounded-md overflow-hidden">
                     <Editor
                       height="500px"
