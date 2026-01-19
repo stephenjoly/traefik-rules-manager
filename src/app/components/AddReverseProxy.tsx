@@ -34,11 +34,13 @@ type FormData = {
   tls: boolean;
   priority: number;
   certResolver: string;
+  tlsOptions: string;
   passHostHeader: boolean;
   stickySession: boolean;
   healthCheckPath: string;
   healthCheckInterval: string;
   serversTransport: string;
+  serversTransportInsecureSkipVerify: boolean;
 };
 
 const DEFAULT_VALUES: FormData = {
@@ -51,11 +53,13 @@ const DEFAULT_VALUES: FormData = {
   tls: true,
   priority: 0,
   certResolver: '',
+  tlsOptions: '',
   passHostHeader: true,
   stickySession: false,
   healthCheckPath: '',
   healthCheckInterval: '30s',
   serversTransport: '',
+  serversTransportInsecureSkipVerify: false,
 };
 
 export default function AddReverseProxy({
@@ -88,6 +92,7 @@ export default function AddReverseProxy({
   const tlsValue = watch('tls', true);
   const passHostHeaderValue = watch('passHostHeader', true);
   const stickySessionValue = watch('stickySession', false);
+  const serversTransportInsecureValue = watch('serversTransportInsecureSkipVerify', false);
 
   const setFromPayload = (payload: RulePayload) => {
     reset({
@@ -100,11 +105,13 @@ export default function AddReverseProxy({
       tls: payload.tls,
       priority: payload.priority || 0,
       certResolver: payload.certResolver || '',
+      tlsOptions: payload.tlsOptions || '',
       passHostHeader: payload.passHostHeader ?? true,
       stickySession: payload.stickySession ?? false,
       healthCheckPath: payload.healthCheckPath || '',
       healthCheckInterval: payload.healthCheckInterval || '',
       serversTransport: payload.serversTransport || '',
+      serversTransportInsecureSkipVerify: payload.serversTransportInsecureSkipVerify ?? false,
     });
     setBackends(payload.backendUrl || []);
     setEntryPoints(payload.entryPoints || []);
@@ -204,11 +211,13 @@ export default function AddReverseProxy({
       middlewares: selectedMiddlewares.length > 0 ? selectedMiddlewares : undefined,
       priority: data.priority,
       certResolver: data.certResolver,
+      tlsOptions: data.tlsOptions,
       passHostHeader: toBool(data.passHostHeader, true),
       stickySession: toBool(data.stickySession, false),
       healthCheckPath: data.healthCheckPath,
       healthCheckInterval: data.healthCheckInterval,
-      serversTransport: data.serversTransport || undefined
+      serversTransport: data.serversTransport || undefined,
+      serversTransportInsecureSkipVerify: toBool(data.serversTransportInsecureSkipVerify, false)
     };
 
     setSaving(true);
@@ -254,11 +263,15 @@ export default function AddReverseProxy({
         middlewares: middlewares.length ? middlewares : undefined,
         priority: router?.priority,
         certResolver: router?.tls?.certResolver,
+        tlsOptions: router?.tls?.options,
         passHostHeader: lb.passHostHeader,
         stickySession: Boolean(lb.sticky),
         healthCheckPath: lb.healthCheck?.path,
         healthCheckInterval: lb.healthCheck?.interval,
-        serversTransport: lb.serversTransport
+        serversTransport: lb.serversTransport,
+        serversTransportInsecureSkipVerify: lb.serversTransport
+          ? Boolean(config?.http?.serversTransports?.[lb.serversTransport]?.insecureSkipVerify)
+          : false
       };
 
       setSaving(true);
@@ -274,11 +287,13 @@ export default function AddReverseProxy({
       setValue('tls', payload.tls);
       setValue('priority', payload.priority || 0);
       setValue('certResolver', payload.certResolver || '');
+      setValue('tlsOptions', payload.tlsOptions || '');
       setValue('passHostHeader', payload.passHostHeader ?? true);
       setValue('stickySession', payload.stickySession ?? false);
       setValue('healthCheckPath', payload.healthCheckPath || '');
       setValue('healthCheckInterval', payload.healthCheckInterval || '');
       setValue('serversTransport', payload.serversTransport || '');
+      setValue('serversTransportInsecureSkipVerify', payload.serversTransportInsecureSkipVerify ?? false);
       setSaving(false);
     } catch (error) {
       setYamlError(error instanceof Error ? error.message : 'Invalid YAML');
@@ -300,13 +315,15 @@ export default function AddReverseProxy({
       {
         priority: data.priority || 0,
         certResolver: data.certResolver || '',
-        passHostHeader: data.passHostHeader ?? true,
-        stickySession: data.stickySession ?? false,
-        healthCheckPath: data.healthCheckPath || '',
-        healthCheckInterval: data.healthCheckInterval || '',
-        serversTransport: data.serversTransport || '',
-      }
-    );
+        tlsOptions: data.tlsOptions || '',
+                        passHostHeader: data.passHostHeader ?? true,
+                        stickySession: data.stickySession ?? false,
+                        healthCheckPath: data.healthCheckPath || '',
+                        healthCheckInterval: data.healthCheckInterval || '',
+                        serversTransport: data.serversTransport || '',
+                        serversTransportInsecureSkipVerify: data.serversTransportInsecureSkipVerify
+                      }
+                    );
     setYamlContent(generated);
   };
 
@@ -587,6 +604,90 @@ export default function AddReverseProxy({
                         onCheckedChange={(val) => setValue('tls', Boolean(val))}
                       />
                     </div>
+
+                    {Boolean(tlsValue) && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="tlsOptions">TLS Options (name)</Label>
+                          <Input
+                            id="tlsOptions"
+                            list="tlsOptionsList"
+                            {...register('tlsOptions')}
+                            placeholder="tls-opts@file"
+                          />
+                          <datalist id="tlsOptionsList">
+                            <option value="tls-opts@file" />
+                          </datalist>
+                          <p className="text-sm text-gray-500">
+                            Optional TLS options reference (e.g., tls-opts@file)
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Middlewares */}
+                  <div className="space-y-2">
+                    <Label htmlFor="middleware">Middlewares</Label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Input
+                          id="middleware"
+                          value={middlewareInput}
+                          onChange={(e) => setMiddlewareInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addMiddleware();
+                            }
+                          }}
+                          placeholder="compress, rate-limit, etc."
+                        />
+                        <Button type="button" onClick={addMiddleware}>
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {existingMiddlewares.length > 0 && (
+                        <div className="flex gap-2 items-center">
+                          <select
+                            className="border rounded px-2 py-1 text-sm"
+                            value={availableMiddleware}
+                            onChange={(e) => setAvailableMiddleware(e.target.value)}
+                          >
+                            <option value="">Select middleware</option>
+                            {existingMiddlewares
+                              .filter((mw) => !selectedMiddlewares.includes(mw))
+                              .map((mw) => (
+                                <option key={mw} value={mw}>
+                                  {mw}
+                                </option>
+                              ))}
+                          </select>
+                          <Button type="button" variant="outline" onClick={addMiddlewareFromList} disabled={!availableMiddleware}>
+                            Add
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {selectedMiddlewares.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedMiddlewares.map((mw) => (
+                          <Badge key={mw} variant="outline">
+                            {mw}
+                            <button
+                              type="button"
+                              onClick={() => removeMiddleware(mw)}
+                              className="ml-2"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-500">
+                      Add middleware names (must be defined elsewhere)
+                    </p>
                   </div>
 
                   {/* Advanced Settings */}
@@ -599,70 +700,6 @@ export default function AddReverseProxy({
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4 space-y-4">
-                        {/* Middlewares */}
-                        <div className="space-y-2">
-                          <Label htmlFor="middleware">Middlewares</Label>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex gap-2">
-                              <Input
-                                id="middleware"
-                                value={middlewareInput}
-                                onChange={(e) => setMiddlewareInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addMiddleware();
-                                  }
-                                }}
-                                placeholder="compress, rate-limit, etc."
-                              />
-                              <Button type="button" onClick={addMiddleware}>
-                                <Plus className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            {existingMiddlewares.length > 0 && (
-                              <div className="flex gap-2 items-center">
-                                <select
-                                  className="border rounded px-2 py-1 text-sm"
-                                  value={availableMiddleware}
-                                  onChange={(e) => setAvailableMiddleware(e.target.value)}
-                                >
-                                  <option value="">Select middleware</option>
-                                  {existingMiddlewares
-                                    .filter((mw) => !selectedMiddlewares.includes(mw))
-                                    .map((mw) => (
-                                      <option key={mw} value={mw}>
-                                        {mw}
-                                      </option>
-                                    ))}
-                                </select>
-                                <Button type="button" variant="outline" onClick={addMiddlewareFromList} disabled={!availableMiddleware}>
-                                  Add
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          {selectedMiddlewares.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {selectedMiddlewares.map((mw) => (
-                                <Badge key={mw} variant="outline">
-                                  {mw}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeMiddleware(mw)}
-                                    className="ml-2"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          <p className="text-sm text-gray-500">
-                            Add middleware names (must be defined elsewhere)
-                          </p>
-                        </div>
-
                         {/* Priority */}
                         <div className="space-y-2">
                           <Label htmlFor="priority">Priority</Label>
@@ -674,19 +711,6 @@ export default function AddReverseProxy({
                           />
                           <p className="text-sm text-gray-500">
                             Higher priority routes are evaluated first (default: 0)
-                          </p>
-                        </div>
-
-                        {/* Cert Resolver */}
-                        <div className="space-y-2">
-                          <Label htmlFor="certResolver">Certificate Resolver</Label>
-                          <Input
-                            id="certResolver"
-                            {...register('certResolver')}
-                            placeholder="letsencrypt"
-                          />
-                          <p className="text-sm text-gray-500">
-                            Name of the certificate resolver to use for TLS
                           </p>
                         </div>
 
@@ -757,6 +781,20 @@ export default function AddReverseProxy({
                           <p className="text-sm text-gray-500">
                             Optional serversTransport to use for this service
                           </p>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label htmlFor="serversTransportInsecureSkipVerify">Servers Transport: Insecure Skip Verify</Label>
+                            <p className="text-sm text-gray-500">
+                              Allow skipping TLS verification for this serversTransport
+                            </p>
+                          </div>
+                          <Switch
+                            id="serversTransportInsecureSkipVerify"
+                            checked={Boolean(serversTransportInsecureValue)}
+                            onCheckedChange={(val) => setValue('serversTransportInsecureSkipVerify', Boolean(val))}
+                          />
                         </div>
                       </AccordionContent>
                     </AccordionItem>

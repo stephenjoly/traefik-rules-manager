@@ -21,6 +21,11 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
     const serviceName = router?.service || routerName;
     const lb = parsed?.http?.services?.[serviceName]?.loadBalancer || {};
     const middlewares = router?.middlewares || [];
+    const tlsOptions = router?.tls?.options;
+    const serversTransportName = lb.serversTransport;
+    const insecureSkipVerify = serversTransportName
+      ? Boolean(parsed?.http?.serversTransports?.[serversTransportName]?.insecureSkipVerify)
+      : false;
 
     return {
       name: baseName,
@@ -33,11 +38,13 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
       middlewares: middlewares.length ? middlewares : rule.middlewares,
       priority: router?.priority ?? rule.priority,
       certResolver: router?.tls?.certResolver ?? rule.certResolver,
+      tlsOptions: tlsOptions ?? rule.tlsOptions,
       passHostHeader: lb.passHostHeader ?? rule.passHostHeader,
       stickySession: Boolean(lb.sticky ?? rule.stickySession),
       healthCheckPath: lb.healthCheck?.path ?? rule.healthCheckPath,
       healthCheckInterval: lb.healthCheck?.interval ?? rule.healthCheckInterval,
       serversTransport: lb.serversTransport ?? rule.serversTransport,
+      serversTransportInsecureSkipVerify: insecureSkipVerify ?? rule.serversTransportInsecureSkipVerify,
     };
   } catch {
     return {
@@ -51,11 +58,13 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
       middlewares: rule.middlewares,
       priority: rule.priority,
       certResolver: rule.certResolver,
+      tlsOptions: rule.tlsOptions,
       passHostHeader: rule.passHostHeader,
       stickySession: rule.stickySession,
       healthCheckPath: rule.healthCheckPath,
       healthCheckInterval: rule.healthCheckInterval,
-      serversTransport: rule.serversTransport
+      serversTransport: rule.serversTransport,
+      serversTransportInsecureSkipVerify: rule.serversTransportInsecureSkipVerify
     };
   }
 }

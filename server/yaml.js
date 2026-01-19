@@ -32,6 +32,8 @@ function buildLoadBalancer(rule) {
 export function generateTraefikYaml(rule) {
   const serviceName = rule.serviceName || rule.name;
   const routerName = rule.routerName || rule.name;
+  const serversTransportName = rule.serversTransport || (rule.serversTransportInsecureSkipVerify ? `${serviceName}-transport` : undefined);
+
   const config = {
     http: {
       routers: {
@@ -45,6 +47,8 @@ export function generateTraefikYaml(rule) {
             ? {
                 tls: {
                   ...(rule.certResolver ? { certResolver: rule.certResolver } : {})
+                  ,
+                  ...(rule.tlsOptions ? { options: rule.tlsOptions } : {})
                 }
               }
             : {})
@@ -54,7 +58,16 @@ export function generateTraefikYaml(rule) {
         [serviceName]: {
           loadBalancer: buildLoadBalancer(rule)
         }
-      }
+      },
+      ...(serversTransportName && rule.serversTransportInsecureSkipVerify
+        ? {
+            serversTransports: {
+              [serversTransportName]: {
+                insecureSkipVerify: true
+              }
+            }
+          }
+        : {})
     }
   };
 

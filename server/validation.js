@@ -29,6 +29,7 @@ const ruleSchema = {
       type: 'array',
       items: { type: 'string', minLength: 1 }
     },
+    tlsOptions: { type: 'string' },
     yamlContent: { type: 'string' },
     validationErrors: { type: 'array', items: { type: 'string' } },
     lastModified: {},
@@ -39,6 +40,7 @@ const ruleSchema = {
     healthCheckPath: { type: 'string' },
     healthCheckInterval: { type: 'string' },
     serversTransport: { type: 'string' },
+    serversTransportInsecureSkipVerify: { type: 'boolean' },
     entrypoints: { type: 'array' } // tolerance for typo
   }
 };

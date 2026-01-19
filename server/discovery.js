@@ -22,6 +22,10 @@ function extractRulesFromYaml(parsed, filePath, idResolver) {
     if (!router || !service || !router.rule) continue;
 
     const backendUrl = service.loadBalancer?.servers?.map(server => server.url).filter(Boolean) || [];
+    const serversTransport = service.loadBalancer?.serversTransport;
+    const insecureSkipVerify = serversTransport
+      ? Boolean(parsed.http?.serversTransports?.[serversTransport]?.insecureSkipVerify)
+      : false;
     rules.push({
       id: idResolver(routerName, filePath),
       name: baseName,
@@ -42,7 +46,8 @@ function extractRulesFromYaml(parsed, filePath, idResolver) {
       stickySession: Boolean(service.loadBalancer?.sticky),
       healthCheckPath: service.loadBalancer?.healthCheck?.path,
       healthCheckInterval: service.loadBalancer?.healthCheck?.interval,
-      serversTransport: service.loadBalancer?.serversTransport,
+      serversTransport,
+      serversTransportInsecureSkipVerify: insecureSkipVerify,
       fileName: path.basename(filePath)
     });
   }

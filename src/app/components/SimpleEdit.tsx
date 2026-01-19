@@ -26,11 +26,13 @@ type FormData = {
   tls: boolean;
   priority: number;
   certResolver: string;
+  tlsOptions: string;
   passHostHeader: boolean;
   stickySession: boolean;
   healthCheckPath: string;
   healthCheckInterval: string;
   serversTransport: string;
+  serversTransportInsecureSkipVerify: boolean;
 };
 
 export default function SimpleEdit({
@@ -50,11 +52,13 @@ export default function SimpleEdit({
       tls: normalized.tls,
       priority: normalized.priority || 0,
       certResolver: normalized.certResolver || '',
+      tlsOptions: normalized.tlsOptions || '',
       passHostHeader: normalized.passHostHeader || false,
       stickySession: normalized.stickySession || false,
       healthCheckPath: normalized.healthCheckPath || '',
       healthCheckInterval: normalized.healthCheckInterval || '',
       serversTransport: normalized.serversTransport || '',
+      serversTransportInsecureSkipVerify: normalized.serversTransportInsecureSkipVerify || false,
     },
   });
 
@@ -64,11 +68,13 @@ export default function SimpleEdit({
   const [backendInput, setBackendInput] = useState('');
   const [entryPointInput, setEntryPointInput] = useState('');
   const [middlewareInput, setMiddlewareInput] = useState('');
+  const [availableMiddleware, setAvailableMiddleware] = useState('');
   const [saving, setSaving] = useState(false);
 
   const tlsValue = watch('tls', normalized.tls);
   const passHostHeaderValue = watch('passHostHeader', normalized.passHostHeader || false);
   const stickySessionValue = watch('stickySession', normalized.stickySession || false);
+  const serversTransportInsecureValue = watch('serversTransportInsecureSkipVerify', normalized.serversTransportInsecureSkipVerify || false);
 
   useEffect(() => {
     const norm = normalizeRuleFromYaml(rule);
@@ -81,11 +87,13 @@ export default function SimpleEdit({
       tls: norm.tls,
       priority: norm.priority || 0,
       certResolver: norm.certResolver || '',
+      tlsOptions: norm.tlsOptions || '',
       passHostHeader: norm.passHostHeader || false,
       stickySession: norm.stickySession || false,
       healthCheckPath: norm.healthCheckPath || '',
       healthCheckInterval: norm.healthCheckInterval || '',
       serversTransport: norm.serversTransport || '',
+      serversTransportInsecureSkipVerify: norm.serversTransportInsecureSkipVerify || false,
     });
     setBackends(norm.backendUrl || []);
     setEntryPoints(norm.entryPoints || []);
@@ -125,6 +133,13 @@ export default function SimpleEdit({
     setSelectedMiddlewares(selectedMiddlewares.filter((m) => m !== middleware));
   };
 
+  const addMiddlewareFromList = () => {
+    if (availableMiddleware && !selectedMiddlewares.includes(availableMiddleware)) {
+      setSelectedMiddlewares([...selectedMiddlewares, availableMiddleware]);
+      setAvailableMiddleware('');
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
     const toBool = (val: any, fallback: boolean) => {
       if (val === true || val === false) return val;
@@ -153,12 +168,14 @@ export default function SimpleEdit({
       tls: toBool(data.tls, false),
       priority: data.priority,
       certResolver: data.certResolver,
+      tlsOptions: data.tlsOptions,
       passHostHeader: toBool(data.passHostHeader, false),
       stickySession: toBool(data.stickySession, false),
       healthCheckPath: data.healthCheckPath,
       healthCheckInterval: data.healthCheckInterval,
       middlewares: selectedMiddlewares,
-      serversTransport: data.serversTransport || undefined
+      serversTransport: data.serversTransport || undefined,
+      serversTransportInsecureSkipVerify: toBool(data.serversTransportInsecureSkipVerify, false)
     };
 
     setSaving(true);
@@ -326,6 +343,104 @@ export default function SimpleEdit({
         />
       </div>
 
+      {Boolean(tlsValue) && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="certResolver">Certificate Resolver</Label>
+            <Input
+              id="certResolver"
+              list="certResolverOptions"
+              {...register('certResolver')}
+              placeholder="dns-cloudflare"
+            />
+            <datalist id="certResolverOptions">
+              <option value="dns-cloudflare" />
+              <option value="letsencrypt" />
+            </datalist>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tlsOptions">TLS Options (name)</Label>
+            <Input
+              id="tlsOptions"
+              list="tlsOptionsList"
+              {...register('tlsOptions')}
+              placeholder="tls-opts@file"
+            />
+            <datalist id="tlsOptionsList">
+              <option value="tls-opts@file" />
+            </datalist>
+            <p className="text-sm text-gray-500">
+              Optional TLS options reference (e.g., tls-opts@file)
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* Middlewares */}
+      <div className="space-y-2">
+        <Label htmlFor="middleware">Middlewares</Label>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Input
+              id="middleware"
+              value={middlewareInput}
+              onChange={(e) => setMiddlewareInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addMiddleware();
+                }
+              }}
+              placeholder="compress, rate-limit, etc."
+            />
+            <Button type="button" onClick={addMiddleware}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          {existingMiddlewares.length > 0 && (
+            <div className="flex gap-2 items-center">
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={availableMiddleware}
+                onChange={(e) => setAvailableMiddleware(e.target.value)}
+              >
+                <option value="">Select middleware</option>
+                {existingMiddlewares
+                  .filter((mw) => !selectedMiddlewares.includes(mw))
+                  .map((mw) => (
+                    <option key={mw} value={mw}>
+                      {mw}
+                    </option>
+                  ))}
+              </select>
+              <Button type="button" variant="outline" onClick={addMiddlewareFromList} disabled={!availableMiddleware}>
+                Add
+              </Button>
+            </div>
+          )}
+        </div>
+        {selectedMiddlewares.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {selectedMiddlewares.map((mw) => (
+              <Badge key={mw} variant="outline">
+                {mw}
+                <button
+                  type="button"
+                  onClick={() => removeMiddleware(mw)}
+                  className="ml-2"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+        <p className="text-sm text-gray-500">
+          Add middleware names (must be defined elsewhere)
+        </p>
+      </div>
+
       {/* Advanced Settings */}
       <Accordion type="single" collapsible className="border rounded-lg">
         <AccordionItem value="advanced" className="border-none">
@@ -336,47 +451,6 @@ export default function SimpleEdit({
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-4">
-            {/* Middlewares */}
-            <div className="space-y-2">
-              <Label htmlFor="middleware">Middlewares</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="middleware"
-                  value={middlewareInput}
-                  onChange={(e) => setMiddlewareInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addMiddleware();
-                    }
-                  }}
-                  placeholder="compress, rate-limit, etc."
-                />
-                <Button type="button" onClick={addMiddleware}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              {selectedMiddlewares.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedMiddlewares.map((mw) => (
-                    <Badge key={mw} variant="outline">
-                      {mw}
-                      <button
-                        type="button"
-                        onClick={() => removeMiddleware(mw)}
-                        className="ml-2"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              <p className="text-sm text-gray-500">
-                Add middleware names (must be defined elsewhere)
-              </p>
-            </div>
-
             {/* Priority */}
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
@@ -391,16 +465,16 @@ export default function SimpleEdit({
               </p>
             </div>
 
-            {/* Cert Resolver */}
+            {/* TLS Options */}
             <div className="space-y-2">
-              <Label htmlFor="certResolver">Certificate Resolver</Label>
+              <Label htmlFor="tlsOptions">TLS Options (name)</Label>
               <Input
-                id="certResolver"
-                {...register('certResolver')}
-                placeholder="letsencrypt"
+                id="tlsOptions"
+                {...register('tlsOptions')}
+                placeholder="tls-opts@file"
               />
               <p className="text-sm text-gray-500">
-                Name of the certificate resolver to use for TLS
+                Optional TLS options reference (e.g., tls-opts@file)
               </p>
             </div>
 

@@ -15,11 +15,13 @@ export type TraefikRule = {
   lastModified: Date;
   priority?: number;
   certResolver?: string;
+  tlsOptions?: string;
   passHostHeader?: boolean;
   stickySession?: boolean;
   healthCheckPath?: string;
   healthCheckInterval?: string;
   serversTransport?: string;
+  serversTransportInsecureSkipVerify?: boolean;
 };
 
 export type RulePayload = {
@@ -33,9 +35,11 @@ export type RulePayload = {
   middlewares?: string[];
   priority?: number;
   certResolver?: string;
+  tlsOptions?: string;
   passHostHeader?: boolean;
   stickySession?: boolean;
   healthCheckPath?: string;
   healthCheckInterval?: string;
   serversTransport?: string;
+  serversTransportInsecureSkipVerify?: boolean;
 };
