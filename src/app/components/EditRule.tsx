@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, Code2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -28,6 +28,7 @@ export default function EditRule({
   const [yamlContent, setYamlContent] = useState(rule.yamlContent);
   const [yamlError, setYamlError] = useState('');
   const [draft, setDraft] = useState<RulePayload | null>(normalizeRuleFromYaml(rule));
+  const [yamlFilename, setYamlFilename] = useState<string>(rule.name);
 
   const handleSimpleSave = async (payload: RulePayload) => {
     await onSave({ ...payload, previousName: rule.name });
@@ -40,8 +41,8 @@ export default function EditRule({
       setYamlError('');
 
       const config = parsed as any;
-      // filename comes from a top-level hint if present; otherwise keep draft/current
-      const fileNameFromYaml = config?.meta?.name || draft?.name || rule.name;
+      // filename comes from user input, then meta hint, then draft/current
+      const fileNameFromYaml = (yamlFilename || '').trim() || config?.meta?.name || draft?.name || rule.name;
       const routerName = Object.keys(config?.http?.routers || {})[0] || rule.routerName || rule.name;
       const router = config?.http?.routers?.[routerName];
       const serviceName = router?.service || routerName;
@@ -83,6 +84,52 @@ export default function EditRule({
     const source = draft || normalizeRuleFromYaml(rule);
     setYamlContent(buildYamlFromPayload(source));
   };
+
+  const syncDraftFromYaml = () => {
+    try {
+      const parsed = yaml.load(yamlContent || '') as any;
+      const fileNameFromYaml = (yamlFilename || '').trim() || parsed?.meta?.name || draft?.name || rule.name;
+      const routerName = Object.keys(parsed?.http?.routers || {})[0] || draft?.routerName || rule.routerName || rule.name;
+      const router = parsed?.http?.routers?.[routerName];
+      const serviceName = router?.service || routerName;
+      const lb = parsed?.http?.services?.[serviceName]?.loadBalancer || {};
+      const serversTransportName = lb.serversTransport;
+      const serversTransportConfig = serversTransportName
+        ? parsed?.http?.serversTransports?.[serversTransportName]
+        : undefined;
+      const middlewares = router?.middlewares || [];
+      const payload: RulePayload = {
+        name: fileNameFromYaml,
+        previousName: rule.name,
+        routerName,
+        serviceName,
+        hostname: router?.rule ? extractHostname(router.rule) : draft?.hostname || rule.hostname,
+        backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || draft?.backendUrl || rule.backendUrl || [],
+        entryPoints: router?.entryPoints || draft?.entryPoints || rule.entryPoints || [],
+        tls: !!router?.tls,
+        middlewares: middlewares.length ? middlewares : draft?.middlewares,
+        priority: router?.priority ?? draft?.priority,
+        certResolver: router?.tls?.certResolver ?? draft?.certResolver,
+        tlsOptions: router?.tls?.options ?? draft?.tlsOptions,
+        passHostHeader: lb.passHostHeader ?? draft?.passHostHeader,
+        stickySession: Boolean(lb.sticky ?? draft?.stickySession),
+        healthCheckPath: lb.healthCheck?.path ?? draft?.healthCheckPath,
+        healthCheckInterval: lb.healthCheck?.interval ?? draft?.healthCheckInterval,
+        serversTransport: serversTransportName ?? draft?.serversTransport,
+        serversTransportInsecureSkipVerify: serversTransportName
+          ? Boolean(serversTransportConfig?.insecureSkipVerify)
+          : draft?.serversTransportInsecureSkipVerify,
+      };
+      setDraft(payload);
+      setYamlError('');
+    } catch {
+      // Keep existing draft and surface errors elsewhere
+    }
+  };
+
+  useEffect(() => {
+    setYamlFilename(draft?.name || rule.name);
+  }, [draft, rule.name]);
 
   const currentRule: TraefikRule = useMemo(() => {
     if (!draft) return rule;
@@ -136,6 +183,8 @@ export default function EditRule({
                 const next = v as 'simple' | 'advanced';
                 if (next === 'advanced') {
                   syncYamlFromDraft();
+                } else {
+                  syncDraftFromYaml();
                 }
                 setMode(next);
               }}
@@ -160,6 +209,16 @@ export default function EditRule({
 
               <TabsContent value="advanced" className="mt-6" forceMount>
                 <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="yamlFilename">Rule Name (used as filename) *</Label>
+                    <Input
+                      id="yamlFilename"
+                      value={yamlFilename}
+                      onChange={(e) => setYamlFilename(e.target.value)}
+                      placeholder="my-service"
+                    />
+                  </div>
+
                   <div className="border rounded-md overflow-hidden">
                     <Editor
                       height="500px"
