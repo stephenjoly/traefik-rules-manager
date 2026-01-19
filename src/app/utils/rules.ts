@@ -34,7 +34,7 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
       hostname: router?.rule ? extractHostname(router.rule) : rule.hostname,
       backendUrl: lb.servers?.map((s: any) => s.url).filter(Boolean) || rule.backendUrl || [],
       entryPoints: router?.entryPoints || rule.entryPoints || [],
-      tls: router?.tls ?? rule.tls,
+      tls: !!router?.tls,
       middlewares: middlewares.length ? middlewares : rule.middlewares,
       priority: router?.priority ?? rule.priority,
       certResolver: router?.tls?.certResolver ?? rule.certResolver,

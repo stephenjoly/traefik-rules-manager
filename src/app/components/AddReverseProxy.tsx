@@ -316,14 +316,14 @@ export default function AddReverseProxy({
         priority: data.priority || 0,
         certResolver: data.certResolver || '',
         tlsOptions: data.tlsOptions || '',
-                        passHostHeader: data.passHostHeader ?? true,
-                        stickySession: data.stickySession ?? false,
-                        healthCheckPath: data.healthCheckPath || '',
-                        healthCheckInterval: data.healthCheckInterval || '',
-                        serversTransport: data.serversTransport || '',
-                        serversTransportInsecureSkipVerify: data.serversTransportInsecureSkipVerify
-                      }
-                    );
+        passHostHeader: data.passHostHeader ?? true,
+        stickySession: data.stickySession ?? false,
+        healthCheckPath: data.healthCheckPath || '',
+        healthCheckInterval: data.healthCheckInterval || '',
+        serversTransport: data.serversTransport || '',
+        serversTransportInsecureSkipVerify: data.serversTransportInsecureSkipVerify ?? false,
+      }
+    );
     setYamlContent(generated);
   };
 
@@ -348,11 +348,15 @@ export default function AddReverseProxy({
         middlewares: middlewares.length ? middlewares : undefined,
         priority: router?.priority,
         certResolver: router?.tls?.certResolver,
+        tlsOptions: router?.tls?.options,
         passHostHeader: lb.passHostHeader,
         stickySession: Boolean(lb.sticky),
         healthCheckPath: lb.healthCheck?.path,
         healthCheckInterval: lb.healthCheck?.interval,
-        serversTransport: lb.serversTransport
+        serversTransport: lb.serversTransport,
+        serversTransportInsecureSkipVerify: lb.serversTransport
+          ? Boolean(parsed?.http?.serversTransports?.[lb.serversTransport]?.insecureSkipVerify)
+          : false,
       };
 
       setValue('name', payload.name);
@@ -365,11 +369,13 @@ export default function AddReverseProxy({
       setValue('tls', payload.tls);
       setValue('priority', payload.priority || 0);
       setValue('certResolver', payload.certResolver || '');
+      setValue('tlsOptions', payload.tlsOptions || '');
       setValue('passHostHeader', payload.passHostHeader ?? true);
       setValue('stickySession', payload.stickySession ?? false);
       setValue('healthCheckPath', payload.healthCheckPath || '');
       setValue('healthCheckInterval', payload.healthCheckInterval || '');
       setValue('serversTransport', payload.serversTransport || '');
+      setValue('serversTransportInsecureSkipVerify', payload.serversTransportInsecureSkipVerify ?? false);
     } catch (err) {
       // keep form as-is if YAML invalid
     }
@@ -607,6 +613,23 @@ export default function AddReverseProxy({
 
                     {Boolean(tlsValue) && (
                       <>
+                        <div className="space-y-2">
+                          <Label htmlFor="certResolver">Certificate Resolver</Label>
+                          <Input
+                            id="certResolver"
+                            list="certResolverOptions"
+                            {...register('certResolver')}
+                            placeholder="dns-cloudflare"
+                          />
+                          <datalist id="certResolverOptions">
+                            <option value="dns-cloudflare" />
+                            <option value="letsencrypt" />
+                          </datalist>
+                          <p className="text-sm text-gray-500">
+                            Optional ACME resolver name (e.g., dns-cloudflare)
+                          </p>
+                        </div>
+
                         <div className="space-y-2">
                           <Label htmlFor="tlsOptions">TLS Options (name)</Label>
                           <Input
@@ -894,11 +917,13 @@ function generateYaml(
   options: {
     priority: number;
     certResolver: string;
+    tlsOptions: string;
     passHostHeader: boolean;
     stickySession: boolean;
     healthCheckPath: string;
     healthCheckInterval: string;
     serversTransport?: string;
+    serversTransportInsecureSkipVerify?: boolean;
   }
 ): string {
   const router: any = {
@@ -908,7 +933,16 @@ function generateYaml(
   };
 
   if (tls) {
-    router.tls = options.certResolver ? { certResolver: options.certResolver } : {};
+    router.tls = {};
+    if (options.certResolver) {
+      router.tls.certResolver = options.certResolver;
+    }
+    if (options.tlsOptions) {
+      router.tls.options = options.tlsOptions;
+    }
+    if (Object.keys(router.tls).length === 0) {
+      delete router.tls;
+    }
   }
 
   if (middlewares.length > 0) {
@@ -950,6 +984,17 @@ function generateYaml(
       services: {
         [serviceName || name]: service,
       },
+      ...(options.serversTransport
+        ? {
+            serversTransports: {
+              [options.serversTransport]: {
+                ...(options.serversTransportInsecureSkipVerify
+                  ? { insecureSkipVerify: true }
+                  : {}),
+              },
+            },
+          }
+        : {}),
     },
   };
 
@@ -969,10 +1014,12 @@ function generateDefaultYaml(): string {
     {
       priority: DEFAULT_VALUES.priority,
       certResolver: DEFAULT_VALUES.certResolver,
+      tlsOptions: DEFAULT_VALUES.tlsOptions,
       passHostHeader: DEFAULT_VALUES.passHostHeader,
       stickySession: DEFAULT_VALUES.stickySession,
       healthCheckPath: DEFAULT_VALUES.healthCheckPath,
       healthCheckInterval: DEFAULT_VALUES.healthCheckInterval,
+      serversTransportInsecureSkipVerify: DEFAULT_VALUES.serversTransportInsecureSkipVerify,
     }
   );
 }
@@ -998,11 +1045,13 @@ function generateYamlFromPayload(payload: RulePayload): string {
     {
       priority: payload.priority || 0,
       certResolver: payload.certResolver || '',
+      tlsOptions: payload.tlsOptions || '',
       passHostHeader: payload.passHostHeader ?? true,
       stickySession: payload.stickySession ?? false,
       healthCheckPath: payload.healthCheckPath || '',
       healthCheckInterval: payload.healthCheckInterval || '',
       serversTransport: payload.serversTransport,
+      serversTransportInsecureSkipVerify: payload.serversTransportInsecureSkipVerify,
     }
   );
 }

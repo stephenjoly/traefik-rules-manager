@@ -111,7 +111,11 @@ export async function updateRule(ctx, id, input) {
   }
 
   const meta = await loadMetadata(ctx.metadataPath);
-  const index = meta.rules.findIndex(r => r.id === id);
+  let index = meta.rules.findIndex(r => r.id === id);
+  if (index === -1 && rule.name) {
+    // Fallback: try matching by name if ids drifted due to resync
+    index = meta.rules.findIndex(r => r.name === rule.name);
+  }
   if (index === -1) {
     const err = new Error('Rule not found');
     err.status = 404;
@@ -158,7 +162,13 @@ export async function updateRule(ctx, id, input) {
 
 export async function deleteRule(ctx, id) {
   const meta = await loadMetadata(ctx.metadataPath);
-  const index = meta.rules.findIndex(r => r.id === id);
+  let index = meta.rules.findIndex(r => r.id === id);
+  if (index === -1 && rule.previousName) {
+    index = meta.rules.findIndex(r => r.name === rule.previousName);
+  }
+  if (index === -1 && rule.name) {
+    index = meta.rules.findIndex(r => r.name === rule.name);
+  }
   if (index === -1) {
     const err = new Error('Rule not found');
     err.status = 404;

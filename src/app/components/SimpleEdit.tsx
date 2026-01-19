@@ -15,6 +15,7 @@ type SimpleEditProps = {
   onSave: (payload: RulePayload) => Promise<void>;
   onCancel: () => void;
   existingMiddlewares: string[];
+  onChangeDraft?: (payload: RulePayload) => void;
 };
 
 type FormData = {
@@ -40,6 +41,7 @@ export default function SimpleEdit({
   onSave,
   onCancel,
   existingMiddlewares,
+  onChangeDraft,
 }: SimpleEditProps) {
   const normalized = normalizeRuleFromYaml(rule);
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<FormData>({
@@ -75,6 +77,34 @@ export default function SimpleEdit({
   const passHostHeaderValue = watch('passHostHeader', normalized.passHostHeader || false);
   const stickySessionValue = watch('stickySession', normalized.stickySession || false);
   const serversTransportInsecureValue = watch('serversTransportInsecureSkipVerify', normalized.serversTransportInsecureSkipVerify || false);
+
+  // Stream draft changes to parent so YAML view stays aligned with form edits
+  useEffect(() => {
+    if (!onChangeDraft) return;
+    const subscription = watch((value) => {
+      const payload: RulePayload = {
+        name: value.name,
+        routerName: value.routerName || value.name,
+        serviceName: value.serviceName || value.name,
+        hostname: value.hostname,
+        backendUrl: backends,
+        entryPoints: entryPoints,
+        tls: Boolean(value.tls),
+        middlewares: selectedMiddlewares.length ? selectedMiddlewares : undefined,
+        priority: value.priority,
+        certResolver: value.certResolver || undefined,
+        tlsOptions: value.tlsOptions || undefined,
+        passHostHeader: value.passHostHeader,
+        stickySession: value.stickySession,
+        healthCheckPath: value.healthCheckPath,
+        healthCheckInterval: value.healthCheckInterval,
+        serversTransport: value.serversTransport || undefined,
+        serversTransportInsecureSkipVerify: value.serversTransportInsecureSkipVerify,
+      };
+      onChangeDraft(payload);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, onChangeDraft, backends, entryPoints, selectedMiddlewares]);
 
   useEffect(() => {
     const norm = normalizeRuleFromYaml(rule);

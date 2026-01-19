@@ -22,10 +22,12 @@ export type TraefikRule = {
   healthCheckInterval?: string;
   serversTransport?: string;
   serversTransportInsecureSkipVerify?: boolean;
+  previousName?: string;
 };
 
 export type RulePayload = {
   name: string;
+  previousName?: string;
   routerName?: string;
   serviceName?: string;
   hostname: string;
