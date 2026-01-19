@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft, Code2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -82,28 +82,30 @@ export default function EditRule({
     setYamlContent(buildYamlFromPayload(source));
   };
 
-  const currentRule: TraefikRule = draft
-    ? {
-        ...rule,
-        routerName: draft.routerName,
-        serviceName: draft.serviceName,
-        hostname: draft.hostname,
-        backendUrl: draft.backendUrl,
-        entryPoints: draft.entryPoints,
-        tls: draft.tls,
-        middlewares: draft.middlewares,
-        priority: draft.priority,
-        certResolver: draft.certResolver,
-        tlsOptions: draft.tlsOptions,
-        passHostHeader: draft.passHostHeader,
-        stickySession: draft.stickySession,
-        healthCheckPath: draft.healthCheckPath,
-        healthCheckInterval: draft.healthCheckInterval,
-        serversTransport: draft.serversTransport,
-        serversTransportInsecureSkipVerify: draft.serversTransportInsecureSkipVerify,
-        yamlContent: buildYamlFromPayload(draft),
-      }
-    : rule;
+  const currentRule: TraefikRule = useMemo(() => {
+    if (!draft) return rule;
+    return {
+      ...rule,
+      name: draft.name,
+      routerName: draft.routerName,
+      serviceName: draft.serviceName,
+      hostname: draft.hostname,
+      backendUrl: draft.backendUrl,
+      entryPoints: draft.entryPoints,
+      tls: draft.tls,
+      middlewares: draft.middlewares,
+      priority: draft.priority,
+      certResolver: draft.certResolver,
+      tlsOptions: draft.tlsOptions,
+      passHostHeader: draft.passHostHeader,
+      stickySession: draft.stickySession,
+      healthCheckPath: draft.healthCheckPath,
+      healthCheckInterval: draft.healthCheckInterval,
+      serversTransport: draft.serversTransport,
+      serversTransportInsecureSkipVerify: draft.serversTransportInsecureSkipVerify,
+      yamlContent: buildYamlFromPayload(draft),
+    };
+  }, [draft, rule]);
 
   return (
     <div className="bg-gray-50">

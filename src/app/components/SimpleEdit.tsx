@@ -128,7 +128,7 @@ export default function SimpleEdit({
     setBackends(norm.backendUrl || []);
     setEntryPoints(norm.entryPoints || []);
     setSelectedMiddlewares(norm.middlewares || []);
-  }, [rule, reset]);
+  }, [rule.id, reset]);
 
   const addBackend = () => {
     if (backendInput.trim() && !backends.includes(backendInput.trim())) {
