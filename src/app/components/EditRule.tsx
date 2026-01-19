@@ -146,7 +146,7 @@ export default function EditRule({
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="simple" className="mt-6">
+              <TabsContent value="simple" className="mt-6" forceMount>
                 <SimpleEdit
                   rule={currentRule}
                   onSave={handleSimpleSave}
@@ -156,7 +156,7 @@ export default function EditRule({
                 />
               </TabsContent>
 
-              <TabsContent value="advanced" className="mt-6">
+              <TabsContent value="advanced" className="mt-6" forceMount>
                 <div className="space-y-4">
                   <div className="border rounded-md overflow-hidden">
                     <Editor
