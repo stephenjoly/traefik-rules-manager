@@ -139,10 +139,10 @@ export default function EditRule({
               }}
             >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="simple">Simple Mode</TabsTrigger>
+                <TabsTrigger value="simple">Form Builder</TabsTrigger>
                 <TabsTrigger value="advanced">
                   <Code2 className="w-4 h-4 mr-2" />
-                  Advanced (YAML)
+                  YAML Editor
                 </TabsTrigger>
               </TabsList>
 
@@ -226,6 +226,8 @@ function buildYamlFromPayload(payload: RulePayload): string {
     if (payload.certResolver) router.tls.certResolver = payload.certResolver;
     if (payload.tlsOptions) router.tls.options = payload.tlsOptions;
     if (Object.keys(router.tls).length === 0) delete router.tls;
+  } else {
+    delete router.tls;
   }
 
   if (payload.middlewares?.length) {
