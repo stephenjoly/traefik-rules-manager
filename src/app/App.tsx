@@ -129,6 +129,7 @@ export default function App() {
       const mapped = mapRule(created);
       setRules([...rules, mapped]);
       setCurrentView('dashboard');
+      setAddOpen(false);
       setDraftTemplateId(undefined);
       toast.success(`Created new reverse proxy: ${mapped.name}`);
     } catch (err) {
@@ -147,6 +148,7 @@ export default function App() {
       const mapped = mapRule(updated);
       setRules(rules.map(r => r.id === mapped.id ? mapped : r));
       setCurrentView('dashboard');
+      setEditOpen(false);
       setDraftTemplateId(undefined);
       toast.success(`Updated rule: ${mapped.name}`);
     } catch (err) {
