@@ -563,6 +563,33 @@ export default function SimpleEdit({
                 Interval between health checks (default: 30s)
               </p>
             </div>
+
+            {/* Servers Transport */}
+            <div className="space-y-2">
+              <Label htmlFor="serversTransport">Servers Transport</Label>
+              <Input
+                id="serversTransport"
+                {...register('serversTransport')}
+                placeholder="firefox"
+              />
+              <p className="text-sm text-gray-500">
+                Optional serversTransport to use for this service
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="serversTransportInsecureSkipVerify">Servers Transport: Insecure Skip Verify</Label>
+                <p className="text-sm text-gray-500">
+                  Allow skipping TLS verification for this serversTransport
+                </p>
+              </div>
+              <Switch
+                id="serversTransportInsecureSkipVerify"
+                checked={Boolean(serversTransportInsecureValue)}
+                onCheckedChange={(val) => setValue('serversTransportInsecureSkipVerify', Boolean(val))}
+              />
+            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
