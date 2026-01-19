@@ -8,6 +8,9 @@ import Editor from '@monaco-editor/react';
 import SimpleEdit from './SimpleEdit';
 import * as yaml from 'js-yaml';
 import { normalizeRuleFromYaml } from '../utils/rules';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import { DialogTitle, DialogDescription } from './ui/dialog';
 
 type EditRuleProps = {
   rule: TraefikRule;
@@ -177,6 +180,10 @@ export default function EditRule({
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Radix Dialog accessibility anchors */}
+            <DialogTitle className="sr-only">Edit Rule</DialogTitle>
+            <DialogDescription className="sr-only">Edit this Traefik reverse proxy configuration.</DialogDescription>
+
             <Tabs
               value={mode}
               onValueChange={(v) => {
