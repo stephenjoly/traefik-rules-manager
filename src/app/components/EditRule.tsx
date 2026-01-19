@@ -40,6 +40,8 @@ export default function EditRule({
       setYamlError('');
 
       const config = parsed as any;
+      // filename comes from a top-level hint if present; otherwise keep draft/current
+      const fileNameFromYaml = config?.meta?.name || draft?.name || rule.name;
       const routerName = Object.keys(config?.http?.routers || {})[0] || rule.routerName || rule.name;
       const router = config?.http?.routers?.[routerName];
       const serviceName = router?.service || routerName;
@@ -51,7 +53,7 @@ export default function EditRule({
       const backendServers = loadBalancer?.servers?.map((s: any) => s.url).filter(Boolean) || [];
       const tlsEnabled = !!router?.tls;
       const payload: RulePayload = {
-        name: draft?.name || rule.name, // allow renaming via Simple form state
+        name: fileNameFromYaml,
         previousName: rule.name,
         routerName,
         serviceName,
