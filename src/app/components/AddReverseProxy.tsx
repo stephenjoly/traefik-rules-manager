@@ -134,9 +134,10 @@ export default function AddReverseProxy({
     if (!selectedTemplateId) return;
     const tmpl = templates.find(t => t.id === selectedTemplateId);
     if (tmpl) {
-      setFromPayload(ruleToPayload(tmpl, { copyName: false }));
+      // When starting from an existing rule, create a copy name to avoid overwrites
+      setFromPayload(ruleToPayload(tmpl, { copyName: true, taken: new Set(rules.map(r => r.fileName ? r.fileName.replace(/\.ya?ml$/i, '') : r.name)) }));
     }
-  }, [selectedTemplateId, templates]);
+  }, [selectedTemplateId, templates, rules]);
 
   const addBackend = () => {
     if (backendInput.trim() && !backends.includes(backendInput.trim())) {

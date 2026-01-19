@@ -182,7 +182,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Toaster position="top-right" richColors />
+      <Toaster position="bottom-center" richColors />
       
       {currentView === 'setup' && (
         <DirectorySetup onLoad={handleDirectoryLoad} loading={loading} />
