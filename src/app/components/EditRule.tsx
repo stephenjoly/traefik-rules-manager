@@ -118,10 +118,10 @@ export default function EditRule({
         stickySession: Boolean(lb.sticky ?? draft?.stickySession),
         healthCheckPath: lb.healthCheck?.path ?? draft?.healthCheckPath,
         healthCheckInterval: lb.healthCheck?.interval ?? draft?.healthCheckInterval,
-        serversTransport: serversTransportName ?? draft?.serversTransport,
+        serversTransport: serversTransportName ?? undefined,
         serversTransportInsecureSkipVerify: serversTransportName
           ? Boolean(serversTransportConfig?.insecureSkipVerify)
-          : draft?.serversTransportInsecureSkipVerify,
+          : false,
       };
       setDraft(payload);
       setYamlError('');
