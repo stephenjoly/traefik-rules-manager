@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard';
 import AddReverseProxy from './components/AddReverseProxy';
 import EditRule from './components/EditRule';
 import { RulePayload, TraefikRule } from './types';
-import { Dialog, DialogContent } from './components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from './components/ui/dialog';
 import {
   apiCreateRule,
   apiDeleteRule,
@@ -205,6 +205,8 @@ export default function App() {
 
           <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) handleBackToDashboard(); }}>
             <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+              <DialogTitle className="sr-only">Add Reverse Proxy</DialogTitle>
+              <DialogDescription className="sr-only">Create a new Traefik reverse proxy configuration.</DialogDescription>
               <AddReverseProxy
                 onSave={handleSaveNewProxy}
                 onCancel={() => { setAddOpen(false); handleBackToDashboard(); }}
@@ -219,6 +221,8 @@ export default function App() {
           {selectedRule && (
             <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) handleBackToDashboard(); }}>
               <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
+                <DialogTitle className="sr-only">Edit Reverse Proxy</DialogTitle>
+                <DialogDescription className="sr-only">Edit this Traefik reverse proxy configuration.</DialogDescription>
                 <EditRule
                   rule={selectedRule}
                   onSave={(payload) => handleSaveEditedRule(selectedRule.id, payload)}
