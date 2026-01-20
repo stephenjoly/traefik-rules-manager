@@ -6,6 +6,7 @@ import AddReverseProxy from './components/AddReverseProxy';
 import EditRule from './components/EditRule';
 import { RulePayload, TraefikRule } from './types';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './components/ui/dialog';
+import { loader } from '@monaco-editor/react';
 import {
   apiCreateRule,
   apiDeleteRule,
@@ -31,6 +32,9 @@ function resolveDefaultApiBase() {
 }
 
 export default function App() {
+  // Configure monaco to load from local copy (no CDN dependency)
+  loader.config({ paths: { vs: '/monaco/vs' } });
+
   const [currentView, setCurrentView] = useState<View>('setup');
   const [apiBase, setApiBase] = useState<string>(resolveDefaultApiBase());
   const [workingDirectory, setWorkingDirectory] = useState<string>('');
