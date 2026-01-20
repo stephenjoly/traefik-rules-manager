@@ -32,6 +32,7 @@ export default function EditRule({
   const [yamlError, setYamlError] = useState('');
   const [draft, setDraft] = useState<RulePayload | null>(normalizeRuleFromYaml(rule));
   const [yamlFilename, setYamlFilename] = useState<string>(rule.name);
+  const [formResetNonce, setFormResetNonce] = useState<number>(0);
 
   const handleSimpleSave = async (payload: RulePayload) => {
     await onSave({ ...payload, previousName: rule.name });
@@ -192,6 +193,7 @@ export default function EditRule({
                   syncYamlFromDraft();
                 } else {
                   syncDraftFromYaml();
+                  setFormResetNonce(Date.now());
                 }
                 setMode(next);
               }}
@@ -206,6 +208,7 @@ export default function EditRule({
 
               <TabsContent value="simple" className="mt-6" forceMount>
                 <SimpleEdit
+                  key={`simple-${formResetNonce}`}
                   rule={currentRule}
                   onSave={handleSimpleSave}
                   onCancel={onCancel}
