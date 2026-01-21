@@ -51,10 +51,3 @@ export async function apiGetMiddlewares(base: string) {
 export async function apiResync(base: string) {
   return request(`${base}/api/resync`, { method: 'POST' });
 }
-
-export async function apiSetDynamicPath(base: string, path: string) {
-  return request<{ configPath: string; count: number }>(`${base}/api/config/path`, {
-    method: 'POST',
-    body: JSON.stringify({ path })
-  });
-}

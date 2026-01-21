@@ -14,8 +14,7 @@ import {
   apiGetMiddlewares,
   apiGetRules,
   apiResync,
-  apiUpdateRule,
-  apiSetDynamicPath
+  apiUpdateRule
 } from './api';
 import { useEffect } from 'react';
 import { duplicateRule } from './utils/rules';
@@ -69,16 +68,13 @@ export default function App() {
   const handleDirectoryLoad = async (path?: string) => {
     setLoading(true);
     try {
-      if (path) {
-        await apiSetDynamicPath(apiBase, path);
-      }
       const health = await apiGetHealth(apiBase);
       await loadRules(apiBase);
       await loadMiddlewares(apiBase);
-      const resolvedPath = health.configPath || path || workingDirectory || '/config/dynamic';
+      const resolvedPath = health.configPath || workingDirectory || '/config/dynamic';
       setWorkingDirectory(resolvedPath);
       setCurrentView('dashboard');
-      toast.success(`Connected to Traefik config at ${health.configPath || path || apiBase}`);
+      toast.success(`Connected to Traefik config at ${resolvedPath}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load';
       toast.error(message);

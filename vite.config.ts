@@ -3,7 +3,6 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs/promises'
-import path from 'path'
 
 export default defineConfig({
   plugins: [

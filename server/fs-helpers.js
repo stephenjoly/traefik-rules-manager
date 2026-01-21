@@ -7,16 +7,10 @@ export async function ensureDir(dirPath) {
 
 export async function atomicWrite(filePath, content) {
   const dir = path.dirname(filePath);
-  try {
-    await ensureDir(dir);
-    const tempPath = path.join(dir, `.tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-    await fs.writeFile(tempPath, content, 'utf8');
-    await fs.rename(tempPath, filePath);
-  } catch (err) {
-    // As a last resort, ensure the directory exists and write directly without temp.
-    await ensureDir(dir);
-    await fs.writeFile(filePath, content, 'utf8');
-  }
+  await ensureDir(dir);
+  const tempPath = path.join(dir, `.tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  await fs.writeFile(tempPath, content, 'utf8');
+  await fs.rename(tempPath, filePath);
 }
 
 export async function readJson(filePath, fallback) {

@@ -14,7 +14,16 @@ ENV TRM_BACKUP_PATH=/config/backups
 ENV TRM_PORT=3001
 ENV TRM_HOST=0.0.0.0
 
-RUN mkdir -p /config/dynamic /config/metadata /config/backups
+RUN mkdir -p /config/dynamic /config/metadata /config/backups && \
+    addgroup -g 1001 -S trm && \
+    adduser -u 1001 -S trm -G trm && \
+    chown -R trm:trm /app /config
+
+USER trm
 
 EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
 CMD ["node", "server/index.js"]

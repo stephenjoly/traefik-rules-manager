@@ -15,11 +15,12 @@ TRAEFIK_DYNAMIC_CONFIG_PATH=./testing/vm-critical/dynamic npm run server
 
 Key environment variables:
 
-- `TRAEFIK_DYNAMIC_CONFIG_PATH` (default `/config/dynamic`) – directory with your Traefik dynamic config files.
+- `TRAEFIK_DYNAMIC_CONFIG_PATH` (default `/config/dynamic`) – directory with your Traefik dynamic config files. **Must be set before starting** - cannot be changed at runtime.
 - `TRM_METADATA_PATH` (default `/config/metadata`) – where the app stores metadata.
 - `TRM_BACKUP_PATH` (default `/config/backups`) – backup location for prior versions.
 - `TRM_PORT` (default `3001`), `TRM_HOST` (default `0.0.0.0`).
-- `TRM_MAX_BACKUP_FILES` (default `10`).
+- `TRM_MAX_BACKUP_FILES` (default `10`) – maximum number of backups to keep per rule.
+- `TRM_FILE_WATCH_DEBOUNCE` (default `2000`) – milliseconds to wait before resyncing after file changes.
 - Frontend → backend target: `VITE_API_BASE` (default `http://localhost:3001`).
 
 Tests:
@@ -82,6 +83,29 @@ docker compose up -d
 ```
 
 Browse the UI at `http://localhost:4173`, select your Traefik dynamic config directory (or rely on the backend defaults), and manage rules. The backend processes `.yml`/`.yaml` files in a flat directory (no subfolders).
+
+## Security Considerations
+
+**Important**: This application has **no built-in authentication or authorization**. Anyone who can access port 3001 can modify your Traefik configuration.
+
+For production deployments:
+
+1. **Run behind a reverse proxy with authentication** (e.g., Traefik with BasicAuth middleware, Authelia, Authentik)
+2. **Restrict network access** via firewall rules or Docker networks
+3. **Use volume permissions** to ensure the container can read/write config files:
+   ```bash
+   # Set proper ownership for volumes
+   sudo chown -R 1001:1001 /path/to/traefik/dynamic
+   sudo chown -R 1001:1001 /path/to/trm/metadata
+   sudo chown -R 1001:1001 /path/to/trm/backups
+   ```
+4. **Monitor the application** using the `/health` and `/ready` endpoints
+5. **Backup your configs** regularly - TRM creates backups but they're stored locally
+
+### Health & Readiness Checks
+
+- **`GET /health`** - Liveness check (filesystem accessible)
+- **`GET /ready`** - Readiness check (initial discovery completed)
 
 ## Publishing to your own GitHub repo
 

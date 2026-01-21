@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const log = createLogger(config.logLevel);
 let watcherRef = null;
+let discoveryComplete = false;
 
 async function syncFromDisk() {
   await initStorage(config);
@@ -47,11 +48,12 @@ export function startFileWatcher(dynamicPath = config.dynamicPath) {
   });
 
   let timer;
+  const debounceMs = parseInt(process.env.TRM_FILE_WATCH_DEBOUNCE || '2000', 10);
   const debouncedSync = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
       syncFromDisk().catch(err => log.error('Resync failed', { error: err.message }));
-    }, 500);
+    }, debounceMs);
   };
 
   watcher
@@ -65,18 +67,6 @@ export function startFileWatcher(dynamicPath = config.dynamicPath) {
   return watcher;
 }
 
-export async function updateDynamicPath(newPath) {
-  if (!newPath || typeof newPath !== 'string') {
-    const err = new Error('Invalid path');
-    err.status = 400;
-    throw err;
-  }
-  config.dynamicPath = newPath;
-  await ensureDir(config.dynamicPath);
-  const rules = await syncFromDisk();
-  startFileWatcher(config.dynamicPath);
-  return rules;
-}
 
 export async function createApp() {
   await initStorage(config);
@@ -84,6 +74,7 @@ export async function createApp() {
   await ensureDir(config.metadataPath);
   await ensureDir(config.backupsPath);
   await syncFromDisk();
+  discoveryComplete = true;
 
   const app = express();
   app.use(cors());
@@ -101,6 +92,20 @@ export async function createApp() {
       res.status(503).json({
         status: 'unhealthy',
         error: err.message
+      });
+    }
+  });
+
+  app.get('/ready', (req, res) => {
+    if (discoveryComplete) {
+      res.json({
+        ready: true,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(503).json({
+        ready: false,
+        message: 'Discovery in progress'
       });
     }
   });
@@ -198,16 +203,6 @@ export async function createApp() {
     try {
       const rules = await syncFromDisk();
       res.json({ count: rules.length });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.post('/api/config/path', async (req, res, next) => {
-    try {
-      const newPath = req.body?.path;
-      const rules = await updateDynamicPath(newPath);
-      res.json({ configPath: config.dynamicPath, count: rules.length });
     } catch (err) {
       next(err);
     }
