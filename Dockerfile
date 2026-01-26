@@ -15,11 +15,9 @@ ENV TRM_PORT=3001
 ENV TRM_HOST=0.0.0.0
 
 RUN mkdir -p /config/dynamic /config/metadata /config/backups && \
-    addgroup -g 1000 -S trm && \
-    adduser -u 1000 -S trm -G trm && \
-    chown -R trm:trm /app /config
+    chown -R node:node /app /config
 
-USER trm
+USER node
 
 EXPOSE 3001
 
