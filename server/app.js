@@ -29,7 +29,11 @@ async function syncFromDisk() {
   const existing = await loadMetadata(config.metadataPath);
   const idMap = new Map(existing.rules.map(r => [r.name, r.id]));
 
-  const rules = await discoverRules(config.dynamicPath, (name) => idMap.get(name) || uuidv4());
+  const rules = await discoverRules(config.dynamicPath, (routerName, filePath) => {
+    // Use filename (not router name) to preserve IDs across resyncs
+    const fileName = path.basename(filePath, path.extname(filePath));
+    return idMap.get(fileName) || uuidv4();
+  });
   await saveMetadata(config.metadataPath, { rules });
   log.info('Synced metadata from disk', { count: rules.length });
   return rules;
