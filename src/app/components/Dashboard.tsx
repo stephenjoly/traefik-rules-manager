@@ -329,12 +329,12 @@ export default function Dashboard({
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => onEditRule(rule)}>
+                            <Button variant="ghost" size="sm" onClick={() => onEditRule(rule)} disabled={busy}>
                               <Edit2 className="w-4 h-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" disabled={busy}>
                                   <Trash2 className="w-4 h-4 text-red-600" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -347,7 +347,11 @@ export default function Dashboard({
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => onDeleteRule(rule.id)} className="bg-red-600 hover:bg-red-700">
+                                  <AlertDialogAction
+                                    onClick={() => onDeleteRule(rule.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                    disabled={busy}
+                                  >
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
