@@ -20,9 +20,20 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4173
 
+# Add non-root user matching typical Linux first user (uid 1000)
+RUN addgroup -g 1000 -S trm && \
+    adduser -u 1000 -S trm -G trm
+
 # Serve the prebuilt assets with a lightweight static server
 RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
+RUN chown -R trm:trm /app
+
+USER trm
 
 EXPOSE 4173
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4173/ || exit 1
+
 CMD ["serve", "-s", "dist", "-l", "4173"]

@@ -94,10 +94,12 @@ For production deployments:
 2. **Restrict network access** via firewall rules or Docker networks
 3. **Use volume permissions** to ensure the container can read/write config files:
    ```bash
-   # Set proper ownership for volumes
-   sudo chown -R 1001:1001 /path/to/traefik/dynamic
-   sudo chown -R 1001:1001 /path/to/trm/metadata
-   sudo chown -R 1001:1001 /path/to/trm/backups
+   # Container runs as UID 1000 (typical first Linux user)
+   # If your volumes are already owned by your user (uid 1000), no action needed
+   # Otherwise, set proper ownership:
+   sudo chown -R 1000:1000 /path/to/traefik/dynamic
+   sudo chown -R 1000:1000 /path/to/trm/metadata
+   sudo chown -R 1000:1000 /path/to/trm/backups
    ```
 4. **Monitor the application** using the `/health` and `/ready` endpoints
 5. **Backup your configs** regularly - TRM creates backups but they're stored locally

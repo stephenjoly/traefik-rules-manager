@@ -18,7 +18,7 @@ Your Traefik Rules Manager is **production-ready for MVP** deployment. All criti
 ### Phase 1: Critical Security & Reliability Fixes
 
 1. ✅ **Removed path traversal vulnerability** (`/api/config/path` endpoint)
-2. ✅ **Added non-root Docker user** (uid 1001 for security)
+2. ✅ **Added non-root Docker user** (uid 1000 for security)
 3. ✅ **Fixed atomic write fallback** (prevents data corruption)
 4. ✅ **Added React ErrorBoundary** (prevents white screen crashes)
 5. ✅ **Added health & readiness endpoints** (`/health`, `/ready`)
@@ -117,10 +117,10 @@ docker run -p 3001:3001 \
 ### 2. Set Volume Permissions
 
 ```bash
-# Container runs as uid 1001
-sudo chown -R 1001:1001 /path/to/traefik/dynamic
-sudo chown -R 1001:1001 /path/to/trm/metadata
-sudo chown -R 1001:1001 /path/to/trm/backups
+# Container runs as uid 1000
+sudo chown -R 1000:1000 /path/to/traefik/dynamic
+sudo chown -R 1000:1000 /path/to/trm/metadata
+sudo chown -R 1000:1000 /path/to/trm/backups
 ```
 
 ### 3. Configure Auth (IMPORTANT!)
@@ -258,7 +258,7 @@ docker logs trm-backend
 ### Scenario 1: Permission Errors
 
 **Symptom**: Container can't read/write files
-**Fix**: `sudo chown -R 1001:1001 /path/to/volumes`
+**Fix**: `sudo chown -R 1000:1000 /path/to/volumes`
 
 ### Scenario 2: Traefik Rejects Generated YAML
 

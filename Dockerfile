@@ -15,8 +15,8 @@ ENV TRM_PORT=3001
 ENV TRM_HOST=0.0.0.0
 
 RUN mkdir -p /config/dynamic /config/metadata /config/backups && \
-    addgroup -g 1001 -S trm && \
-    adduser -u 1001 -S trm -G trm && \
+    addgroup -g 1000 -S trm && \
+    adduser -u 1000 -S trm -G trm && \
     chown -R trm:trm /app /config
 
 USER trm
