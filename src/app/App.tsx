@@ -112,7 +112,8 @@ export default function App() {
     setActionLoading(true);
     try {
       await apiDeleteRule(apiBase, ruleId);
-      setRules(rules.filter(r => r.id !== ruleId));
+      // Reload from server to ensure we have the latest data
+      await loadRules(apiBase);
       toast.success(`Deleted rule: ${rule ? rule.name : 'rule'}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete rule';
@@ -125,13 +126,13 @@ export default function App() {
   const handleSaveNewProxy = async (payload: RulePayload) => {
     setActionLoading(true);
     try {
-      const created = await apiCreateRule(apiBase, payload);
-      const mapped = mapRule(created);
-      setRules([...rules, mapped]);
+      await apiCreateRule(apiBase, payload);
       setCurrentView('dashboard');
       setAddOpen(false);
       setDraftTemplateId(undefined);
-      toast.success(`Created new reverse proxy: ${mapped.name}`);
+      // Reload from server to ensure we have the latest data
+      await loadRules(apiBase);
+      toast.success(`Created new reverse proxy: ${payload.name}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create rule';
       toast.error(message);
@@ -144,13 +145,13 @@ export default function App() {
   const handleSaveEditedRule = async (id: string, payload: RulePayload) => {
     setActionLoading(true);
     try {
-      const updated = await apiUpdateRule(apiBase, id, payload);
-      const mapped = mapRule(updated);
-      setRules(rules.map(r => r.id === mapped.id ? mapped : r));
+      await apiUpdateRule(apiBase, id, payload);
       setCurrentView('dashboard');
       setEditOpen(false);
       setDraftTemplateId(undefined);
-      toast.success(`Updated rule: ${mapped.name}`);
+      // Reload from server to ensure we have the latest data
+      await loadRules(apiBase);
+      toast.success(`Updated rule: ${payload.name}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update rule';
       toast.error(message);
