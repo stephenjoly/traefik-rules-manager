@@ -24,10 +24,8 @@ type View = 'setup' | 'dashboard' | 'add' | 'edit';
 function resolveDefaultApiBase() {
   const envBase = (import.meta.env.VITE_API_BASE as string | undefined) || '';
   if (envBase.trim()) return envBase.trim();
-  if (typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:3001`;
-  }
-  return 'http://localhost:3001';
+  // Default: use /api path on same hostname (works with Traefik routing)
+  return '';
 }
 
 export default function App() {
