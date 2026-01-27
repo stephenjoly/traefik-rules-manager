@@ -114,6 +114,23 @@ export async function createApp() {
     }
   });
 
+  // Alias for frontend to use through Traefik
+  app.get('/api/health', async (req, res) => {
+    try {
+      await fs.access(config.dynamicPath);
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        configPath: config.dynamicPath
+      });
+    } catch (err) {
+      res.status(503).json({
+        status: 'unhealthy',
+        error: err.message
+      });
+    }
+  });
+
   app.get('/api/rules', async (req, res, next) => {
     try {
       const rules = await listRules(config);

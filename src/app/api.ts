@@ -19,7 +19,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export async function apiGetHealth(base: string) {
-  return request<{ status: string; configPath?: string }>(`${base}/health`);
+  return request<{ status: string; configPath?: string }>(`${base}/api/health`);
 }
 
 export async function apiGetRules(base: string) {
