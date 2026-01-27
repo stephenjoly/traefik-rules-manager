@@ -71,10 +71,8 @@ export function normalizeRuleFromYaml(rule: TraefikRule): RulePayload {
 
 function uniqueName(base: string, taken: Set<string>): string {
   let candidate = base;
-  let counter = 1;
   while (taken.has(candidate)) {
-    candidate = `${base}-${counter}`;
-    counter += 1;
+    candidate = `${candidate}-copy`;
   }
   return candidate;
 }

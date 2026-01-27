@@ -1,0 +1,26 @@
+http:
+  routers:
+    trm-backend-rtr:
+      rule: Host(`trm.{{ env "DOMAINNAME_1" }}`) && PathPrefix(`/api`)
+      service: trm-backend-svc
+      entryPoints:
+        - websecure
+      middlewares:
+        - chain-no-auth
+        - trm-strip-api
+      tls:
+        certResolver: dns-cloudflare
+        options: tls-opts@file
+
+  middlewares:
+    trm-strip-api:
+      stripPrefix:
+        prefixes:
+          - /api
+
+  services:
+    trm-backend-svc:
+      loadBalancer:
+        servers:
+          - url: http://{{ env "SERVERIP_CRITICAL" }}:3001
+        passHostHeader: true
