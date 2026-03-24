@@ -6,6 +6,8 @@ The Traefik Rules Manager (TRM) is a web-based configuration authoring layer for
 
 **Deployment Model**: TRM is designed to run on the same machine as Traefik via Docker, with a bind mount to the Traefik dynamic configuration directory. Users can simply run a Docker Compose file and immediately see all their existing Traefik rules in the UI.
 
+**Security Model**: TRM now has built-in admin authentication. Human users sign in with bootstrap credentials from environment variables and receive an `HttpOnly` session cookie. Remote automation uses one-time API keys stored hashed in metadata and sent as bearer tokens to dedicated `/api/automation/*` endpoints.
+
 ### Core Principles
 
 1. **Schema Compliance**: Respect Traefik's configuration schema completely
@@ -196,6 +198,13 @@ http:
     }
   ]
 }
+
+### Auth and Metadata
+- Metadata is stored in `config/metadata/index.json`
+- The metadata file now contains both `rules` and `apiKeys`
+- API keys are never stored in plaintext; only hashed values plus audit metadata are persisted
+- Public health endpoints stay open, but the UI and `/api/*` management routes require admin auth
+- Automation rule CRUD uses `/api/automation/*` with bearer keys and reuses the same rule service as the UI
 ```
 
 ### API Endpoints Required

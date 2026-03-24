@@ -45,3 +45,31 @@ export type RulePayload = {
   serversTransport?: string;
   serversTransportInsecureSkipVerify?: boolean;
 };
+
+export type AuthSession = {
+  authEnabled: boolean;
+  authenticated: boolean;
+  username?: string;
+};
+
+export type ApiKeyRecord = {
+  id: string;
+  name: string;
+  prefix: string;
+  createdAt: string;
+  createdBy: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  revokedBy?: string | null;
+  expiresAt: string | null;
+};
+
+export type CreateApiKeyPayload = {
+  name: string;
+  expiresAt?: string;
+};
+
+export type CreatedApiKeyResponse = {
+  apiKey: string;
+  record: ApiKeyRecord;
+};

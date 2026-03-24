@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, FolderOpen, Search, Edit2, Trash2, Shield, CheckCircle, AlertCircle, Globe, Server, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, RefreshCw, FolderOpen, Search, Edit2, Trash2, Shield, CheckCircle, AlertCircle, Globe, Server, ArrowUpDown, ArrowUp, ArrowDown, KeyRound, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -34,6 +34,9 @@ type DashboardProps = {
   onDeleteRule: (ruleId: string) => void;
   onReload: () => void;
   onChangeDirectory: () => void;
+  onManageApiKeys: () => void;
+  onLogout: () => void;
+  username?: string;
   busy?: boolean;
 };
 
@@ -48,6 +51,9 @@ export default function Dashboard({
   onDeleteRule,
   onReload,
   onChangeDirectory,
+  onManageApiKeys,
+  onLogout,
+  username,
   busy = false,
 }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,6 +174,15 @@ export default function Dashboard({
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {username && (
+                <Badge variant="outline" className="border-slate-300 bg-slate-50 text-slate-700">
+                  Signed in as {username}
+                </Badge>
+              )}
+              <Button variant="outline" onClick={onManageApiKeys} disabled={busy}>
+                <KeyRound className="w-4 h-4 mr-2" />
+                API Keys
+              </Button>
               <Button variant="outline" onClick={onReload} disabled={busy}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Reload
@@ -175,6 +190,10 @@ export default function Dashboard({
               <Button onClick={onAddProxy} disabled={busy}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Reverse Proxy
+              </Button>
+              <Button variant="ghost" onClick={onLogout} disabled={busy}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
               </Button>
             </div>
           </div>

@@ -21,6 +21,11 @@ Key environment variables:
 - `TRM_PORT` (default `3001`), `TRM_HOST` (default `0.0.0.0`).
 - `TRM_MAX_BACKUP_FILES` (default `10`) – maximum number of backups to keep per rule.
 - `TRM_FILE_WATCH_DEBOUNCE` (default `2000`) – milliseconds to wait before resyncing after file changes.
+- `TRM_ADMIN_USERNAME`, `TRM_ADMIN_PASSWORD` – bootstrap admin credentials for the built-in login.
+- `TRM_SESSION_SECRET` – signing secret for the admin session cookie.
+- `TRM_AUTH_ENABLED` – optional explicit auth toggle. Defaults to `true` when bootstrap credentials are present.
+- `TRM_SESSION_TTL_HOURS` (default `12`) – admin session lifetime.
+- `TRM_COOKIE_SECURE` (default `false`) – set to `true` when serving TRM over HTTPS directly.
 - Frontend → backend target: `VITE_API_BASE` (default `http://localhost:3001`).
 
 Tests:
@@ -86,13 +91,22 @@ Browse the UI at `http://localhost:4173`, select your Traefik dynamic config dir
 
 ## Security Considerations
 
-**Important**: This application has **no built-in authentication or authorization**. Anyone who can access port 3001 can modify your Traefik configuration.
+TRM now supports built-in admin authentication and one-time automation API keys.
+
+Recommended production setup:
+
+1. Set `TRM_ADMIN_USERNAME`, `TRM_ADMIN_PASSWORD`, and `TRM_SESSION_SECRET`
+2. Keep the backend on a trusted network or behind your reverse proxy
+3. Set `TRM_COOKIE_SECURE=true` if TRM is served directly over HTTPS
+4. Restrict which systems can reach the automation API
+5. Rotate or revoke API keys when automation no longer needs them
+
+The admin UI uses an `HttpOnly` session cookie. Automation clients should use `Authorization: Bearer <api-key>` against the dedicated automation endpoints under `/api/automation`.
 
 For production deployments:
 
-1. **Run behind a reverse proxy with authentication** (e.g., Traefik with BasicAuth middleware, Authelia, Authentik)
-2. **Restrict network access** via firewall rules or Docker networks
-3. **Use volume permissions** to ensure the container can read/write config files:
+1. **Restrict network access** via firewall rules or Docker networks
+2. **Use volume permissions** to ensure the container can read/write config files:
    ```bash
    # Container runs as UID 1000 (typical first Linux user)
    # If your volumes are already owned by your user (uid 1000), no action needed
@@ -101,8 +115,22 @@ For production deployments:
    sudo chown -R 1000:1000 /path/to/trm/metadata
    sudo chown -R 1000:1000 /path/to/trm/backups
    ```
-4. **Monitor the application** using the `/health` and `/ready` endpoints
-5. **Backup your configs** regularly - TRM creates backups but they're stored locally
+3. **Monitor the application** using the `/health` and `/ready` endpoints
+4. **Backup your configs** regularly - TRM creates backups but they're stored locally
+
+### Admin and Automation APIs
+
+- `POST /api/auth/login` – create admin session
+- `POST /api/auth/logout` – clear admin session
+- `GET /api/auth/session` – inspect current admin session
+- `GET /api/admin/api-keys` – list API keys without secrets
+- `POST /api/admin/api-keys` – create a new API key and return the plaintext once
+- `POST /api/admin/api-keys/:id/revoke` – revoke a key
+- `POST /api/automation/rules` – create a rule with bearer auth
+- `GET /api/automation/rules` – list rules with bearer auth
+- `GET /api/automation/rules/:id` – fetch a rule with bearer auth
+- `PUT /api/automation/rules/:id` – update a rule with bearer auth
+- `DELETE /api/automation/rules/:id` – delete a rule with bearer auth
 
 ### Health & Readiness Checks
 

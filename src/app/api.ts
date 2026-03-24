@@ -1,7 +1,14 @@
-import { RulePayload } from './types';
+import {
+  ApiKeyRecord,
+  AuthSession,
+  CreateApiKeyPayload,
+  CreatedApiKeyResponse,
+  RulePayload
+} from './types';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(options?.headers || {})
@@ -10,8 +17,19 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const body = await res.json().catch(() => null);
+      const message = body?.error || body?.message || res.statusText;
+      const error = new Error(message);
+      (error as Error & { status?: number }).status = res.status;
+      throw error;
+    }
+
     const text = await res.text();
-    throw new Error(text || res.statusText);
+    const error = new Error(text || res.statusText);
+    (error as Error & { status?: number }).status = res.status;
+    throw error;
   }
 
   if (res.status === 204) return undefined as T;
@@ -50,4 +68,38 @@ export async function apiGetMiddlewares(base: string) {
 
 export async function apiResync(base: string) {
   return request(`${base}/api/resync`, { method: 'POST' });
+}
+
+export async function apiGetSession(base: string) {
+  return request<AuthSession>(`${base}/api/auth/session`);
+}
+
+export async function apiLogin(base: string, username: string, password: string) {
+  return request<AuthSession>(`${base}/api/auth/login`, {
+    method: 'POST',
+    body: JSON.stringify({ username, password })
+  });
+}
+
+export async function apiLogout(base: string) {
+  return request<void>(`${base}/api/auth/logout`, {
+    method: 'POST'
+  });
+}
+
+export async function apiGetApiKeys(base: string) {
+  return request<ApiKeyRecord[]>(`${base}/api/admin/api-keys`);
+}
+
+export async function apiCreateApiKey(base: string, payload: CreateApiKeyPayload) {
+  return request<CreatedApiKeyResponse>(`${base}/api/admin/api-keys`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function apiRevokeApiKey(base: string, id: string) {
+  return request<ApiKeyRecord>(`${base}/api/admin/api-keys/${id}/revoke`, {
+    method: 'POST'
+  });
 }
