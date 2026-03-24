@@ -18,6 +18,8 @@ import {
   deleteRule
 } from './rules-service.js';
 import { normalizeRule, validateRule } from './validation.js';
+import { initAuth } from './auth.js';
+import { authenticateApiKey, createApiKey, listApiKeys, revokeApiKey } from './api-keys.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const log = createLogger(config.logLevel);
@@ -34,7 +36,7 @@ async function syncFromDisk() {
     const fileName = path.basename(filePath, path.extname(filePath));
     return idMap.get(fileName) || uuidv4();
   });
-  await saveMetadata(config.metadataPath, { rules });
+  await saveMetadata(config.metadataPath, { ...existing, rules });
   log.info('Synced metadata from disk', { count: rules.length });
   return rules;
 }
@@ -79,10 +81,91 @@ export async function createApp() {
   await ensureDir(config.backupsPath);
   await syncFromDisk();
   discoveryComplete = true;
+  const auth = initAuth(config);
 
   const app = express();
-  app.use(cors());
+  app.use(cors({
+    origin: (origin, callback) => callback(null, origin || true),
+    credentials: true
+  }));
   app.use(express.json({ limit: '2mb' }));
+
+  function requireApiKey(req, res, next) {
+    if (!config.authEnabled) return next();
+    const header = req.headers.authorization || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    if (!token) {
+      return res.status(401).json({ error: 'API key required' });
+    }
+
+    authenticateApiKey(config, token)
+      .then((key) => {
+        if (!key) return res.status(401).json({ error: 'Invalid API key' });
+        req.apiKey = key;
+        return next();
+      })
+      .catch(next);
+  }
+
+  function registerRuleRoutes(router) {
+    router.get('/rules', async (req, res, next) => {
+      try {
+        const rules = await listRules(config);
+        res.json(rules);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.get('/rules/:id', async (req, res, next) => {
+      try {
+        const rule = await getRule(config, req.params.id);
+        if (!rule) return res.status(404).json({ error: 'Not found' });
+        res.json(rule);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.get('/rules/:id/yaml', async (req, res, next) => {
+      try {
+        const rule = await getRule(config, req.params.id);
+        if (!rule) return res.status(404).json({ error: 'Not found' });
+        const yamlPath = path.join(config.dynamicPath, `${rule.name}.yaml`);
+        const content = await fs.readFile(yamlPath, 'utf8');
+        res.type('text/yaml').send(content);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.post('/rules', async (req, res, next) => {
+      try {
+        const rule = await createRule(config, req.body);
+        res.status(201).json(rule);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.put('/rules/:id', async (req, res, next) => {
+      try {
+        const rule = await updateRule(config, req.params.id, req.body);
+        res.json(rule);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.delete('/rules/:id', async (req, res, next) => {
+      try {
+        await deleteRule(config, req.params.id);
+        res.status(204).send();
+      } catch (err) {
+        next(err);
+      }
+    });
+  }
 
   app.get('/health', async (req, res) => {
     try {
@@ -131,65 +214,36 @@ export async function createApp() {
     }
   });
 
-  app.get('/api/rules', async (req, res, next) => {
-    try {
-      const rules = await listRules(config);
-      res.json(rules);
-    } catch (err) {
-      next(err);
+  app.get('/api/auth/session', (req, res) => {
+    const session = auth.getSessionState(req);
+    if (session.authEnabled && !session.authenticated) {
+      return res.status(401).json(session);
     }
+    return res.json(session);
   });
 
-  app.get('/api/rules/:id', async (req, res, next) => {
-    try {
-      const rule = await getRule(config, req.params.id);
-      if (!rule) return res.status(404).json({ error: 'Not found' });
-      res.json(rule);
-    } catch (err) {
-      next(err);
+  app.post('/api/auth/login', (req, res) => {
+    const { username = '', password = '' } = req.body || {};
+    const result = auth.login(username, password);
+    if (!result.ok) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+    if (config.authEnabled) {
+      auth.setSessionCookie(res, result.username);
+    }
+    return res.json({
+      authEnabled: config.authEnabled,
+      authenticated: true,
+      username: result.username
+    });
   });
 
-  app.get('/api/rules/:id/yaml', async (req, res, next) => {
-    try {
-      const rule = await getRule(config, req.params.id);
-      if (!rule) return res.status(404).json({ error: 'Not found' });
-      const yamlPath = path.join(config.dynamicPath, `${rule.name}.yaml`);
-      const content = await fs.readFile(yamlPath, 'utf8');
-      res.type('text/yaml').send(content);
-    } catch (err) {
-      next(err);
-    }
+  app.post('/api/auth/logout', (req, res) => {
+    auth.clearSessionCookie(res);
+    res.status(204).send();
   });
 
-  app.post('/api/rules', async (req, res, next) => {
-    try {
-      const rule = await createRule(config, req.body);
-      res.status(201).json(rule);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.put('/api/rules/:id', async (req, res, next) => {
-    try {
-      const rule = await updateRule(config, req.params.id, req.body);
-      res.json(rule);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.delete('/api/rules/:id', async (req, res, next) => {
-    try {
-      await deleteRule(config, req.params.id);
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.post('/api/rules/validate', async (req, res) => {
+  app.post('/api/rules/validate', auth.requireAdminSession, async (req, res) => {
     const body = req.body || {};
     if (body.yamlContent) {
       try {
@@ -209,7 +263,7 @@ export async function createApp() {
     return res.json({ valid: true });
   });
 
-  app.get('/api/middlewares', async (req, res, next) => {
+  app.get('/api/middlewares', auth.requireAdminSession, async (req, res, next) => {
     try {
       const rules = await listRules(config);
       const middlewareSet = new Set();
@@ -220,7 +274,7 @@ export async function createApp() {
     }
   });
 
-  app.post('/api/resync', async (req, res, next) => {
+  app.post('/api/resync', auth.requireAdminSession, async (req, res, next) => {
     try {
       const rules = await syncFromDisk();
       res.json({ count: rules.length });
@@ -228,6 +282,43 @@ export async function createApp() {
       next(err);
     }
   });
+
+  app.get('/api/admin/api-keys', auth.requireAdminSession, async (req, res, next) => {
+    try {
+      const keys = await listApiKeys(config);
+      res.json(keys);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post('/api/admin/api-keys', auth.requireAdminSession, async (req, res, next) => {
+    try {
+      const created = await createApiKey(config, req.body, req.auth.username);
+      res.status(201).json(created);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post('/api/admin/api-keys/:id/revoke', auth.requireAdminSession, async (req, res, next) => {
+    try {
+      const record = await revokeApiKey(config, req.params.id, req.auth.username);
+      res.json(record);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  const automationRouter = express.Router();
+  automationRouter.use(requireApiKey);
+  registerRuleRoutes(automationRouter);
+  app.use('/api/automation', automationRouter);
+
+  const adminRulesRouter = express.Router();
+  adminRulesRouter.use(auth.requireAdminSession);
+  registerRuleRoutes(adminRulesRouter);
+  app.use('/api', adminRulesRouter);
 
   app.use((err, req, res, _next) => {
     const status = err.status || 500;
