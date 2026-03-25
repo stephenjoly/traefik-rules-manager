@@ -34,6 +34,11 @@ Tests:
 npm test
 ```
 
+Interactive docs:
+
+- Swagger UI: `http://localhost:3001/api-docs`
+- Raw OpenAPI JSON: `http://localhost:3001/api-docs/openapi.json`
+
 ## Containers (GHCR)
 
 This repo builds and publishes two images to GHCR (via GitHub Actions on `main` and tags):
@@ -131,6 +136,19 @@ For production deployments:
 - `GET /api/automation/rules/:id` – fetch a rule with bearer auth
 - `PUT /api/automation/rules/:id` – update a rule with bearer auth
 - `DELETE /api/automation/rules/:id` – delete a rule with bearer auth
+
+### Interactive API Docs
+
+TRM serves Swagger UI directly from the backend:
+
+- `GET /api-docs` – interactive docs with Try It Out support
+- `GET /api-docs/openapi.json` – raw OpenAPI document
+
+How to use the docs:
+
+1. Open `/api-docs`
+2. Call `POST /api/auth/login` first if you want to exercise admin/session-based endpoints
+3. Use the bearer auth control for `/api/automation/*` routes after creating an API key
 
 ### Health & Readiness Checks
 

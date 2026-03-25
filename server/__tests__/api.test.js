@@ -58,6 +58,9 @@ describe('API integration', () => {
     await request.get('/health').expect(200);
     await request.get('/ready').expect(200);
     await request.get('/api/health').expect(200);
+    const docs = await request.get('/api-docs/openapi.json').expect(200);
+    expect(docs.body.paths['/api/automation/rules']).toBeTruthy();
+    await request.get('/api-docs').expect(200);
     await request.get('/api/rules').expect(401);
 
     const session = await request.get('/api/auth/session').expect(401);

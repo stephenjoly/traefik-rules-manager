@@ -8,6 +8,8 @@ The Traefik Rules Manager (TRM) is a web-based configuration authoring layer for
 
 **Security Model**: TRM now has built-in admin authentication. Human users sign in with bootstrap credentials from environment variables and receive an `HttpOnly` session cookie. Remote automation uses one-time API keys stored hashed in metadata and sent as bearer tokens to dedicated `/api/automation/*` endpoints.
 
+**API Discoverability**: The backend now serves OpenAPI docs directly at `/api-docs` and exposes the raw spec at `/api-docs/openapi.json` so operators and integrators can explore and test the API before deployment.
+
 ### Core Principles
 
 1. **Schema Compliance**: Respect Traefik's configuration schema completely

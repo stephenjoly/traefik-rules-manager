@@ -20,6 +20,7 @@ import {
 import { normalizeRule, validateRule } from './validation.js';
 import { initAuth } from './auth.js';
 import { authenticateApiKey, createApiKey, listApiKeys, revokeApiKey } from './api-keys.js';
+import { createOpenApiSpec, renderSwaggerHtml } from './openapi.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const log = createLogger(config.logLevel);
@@ -89,6 +90,15 @@ export async function createApp() {
     credentials: true
   }));
   app.use(express.json({ limit: '2mb' }));
+
+  app.get('/api-docs/openapi.json', (req, res) => {
+    const origin = `${req.protocol}://${req.get('host')}`;
+    res.json(createOpenApiSpec(origin));
+  });
+
+  app.get('/api-docs', (req, res) => {
+    res.type('html').send(renderSwaggerHtml('/api-docs/openapi.json'));
+  });
 
   function requireApiKey(req, res, next) {
     if (!config.authEnabled) return next();
