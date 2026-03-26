@@ -5,22 +5,21 @@ Manage Traefik dynamic configuration (.yml/.yaml) with a friendly UI and a small
 
 ## Local development
 
+Create your local env file first:
+
+```bash
+cp .env.example .env.local
+```
+
 ```bash
 npm install
 # start UI
-VITE_API_BASE=http://localhost:3001 npm run dev
+npm run dev
 # start API
-TRAEFIK_DYNAMIC_CONFIG_PATH=./testing/vm-critical/dynamic npm run server
+npm run server:dev
 ```
 
-Use the sample metadata and backup directories as well if you want the full local test setup:
-
-```bash
-TRAEFIK_DYNAMIC_CONFIG_PATH=./testing/vm-critical/dynamic \
-TRM_METADATA_PATH=./testing/vm-critical/metadata \
-TRM_BACKUP_PATH=./testing/vm-critical/backups \
-npm run server
-```
+`npm run dev` picks up frontend `VITE_*` values from `.env.local` automatically. `npm run server:dev` uses the same `.env.local` file for backend variables.
 
 Key environment variables:
 

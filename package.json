@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "server:dev": "node --env-file=.env.local server/index.js",
     "server": "node server/index.js",
     "start": "node server/index.js",
     "test": "vitest run",
