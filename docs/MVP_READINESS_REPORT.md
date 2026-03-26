@@ -368,4 +368,4 @@ The code quality is solid, test coverage is good for an MVP, and you've addresse
 - [PRE_DEPLOYMENT_CHECKLIST.md](PRE_DEPLOYMENT_CHECKLIST.md) - Detailed test recommendations
 - [FORM_YAML_ANALYSIS.md](FORM_YAML_ANALYSIS.md) - Form ↔ YAML experience details
 - [IMPROVEMENTS.md](IMPROVEMENTS.md) - All changes made in Phase 1
-- [README.md](README.md) - Updated deployment guide
+- [README.md](../README.md) - Updated deployment guide

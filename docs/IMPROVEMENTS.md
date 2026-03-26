@@ -16,7 +16,7 @@ All **Phase 1 Critical Fixes** have been completed successfully. The codebase is
 2. **Added non-root Docker user**
    - **Risk**: Container running as root (security anti-pattern)
    - **Fix**: Created user `trm` (uid 1001) and set proper permissions
-   - **Files**: `Dockerfile`
+   - **Files**: `docker/Dockerfile`
 
 3. **Security documentation**
    - Added comprehensive security section to README
@@ -42,7 +42,7 @@ All **Phase 1 Critical Fixes** have been completed successfully. The codebase is
 
 7. **Added Docker HEALTHCHECK**
    - **Fix**: Proper liveness probe for container orchestration
-   - **Files**: `Dockerfile`
+   - **Files**: `docker/Dockerfile`
 
 ### 🚀 Performance Improvements
 
@@ -126,7 +126,7 @@ To verify all changes:
 
 1. **Build the Docker image**:
    ```bash
-   docker build -t trm-backend .
+   docker build -f docker/Dockerfile -t trm-backend .
    ```
 
 2. **Run tests**:

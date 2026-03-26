@@ -13,6 +13,15 @@ VITE_API_BASE=http://localhost:3001 npm run dev
 TRAEFIK_DYNAMIC_CONFIG_PATH=./testing/vm-critical/dynamic npm run server
 ```
 
+Use the sample metadata and backup directories as well if you want the full local test setup:
+
+```bash
+TRAEFIK_DYNAMIC_CONFIG_PATH=./testing/vm-critical/dynamic \
+TRM_METADATA_PATH=./testing/vm-critical/metadata \
+TRM_BACKUP_PATH=./testing/vm-critical/backups \
+npm run server
+```
+
 Key environment variables:
 
 - `TRAEFIK_DYNAMIC_CONFIG_PATH` (default `/config/dynamic`) – directory with your Traefik dynamic config files. **Must be set before starting** - cannot be changed at runtime.
@@ -28,6 +37,8 @@ Key environment variables:
 - `TRM_COOKIE_SECURE` (default `false`) – set to `true` when serving TRM over HTTPS directly.
 - Frontend → backend target: `VITE_API_BASE` (default `http://localhost:3001`).
 
+Admin login credentials are not stored in the repo. The backend only enables admin auth when you provide `TRM_ADMIN_USERNAME`, `TRM_ADMIN_PASSWORD`, and `TRM_SESSION_SECRET`. If those are unset, the UI runs without login.
+
 Tests:
 
 ```bash
@@ -38,6 +49,25 @@ Interactive docs:
 
 - Swagger UI: `http://localhost:3001/api-docs`
 - Raw OpenAPI JSON: `http://localhost:3001/api-docs/openapi.json`
+
+## Bundled Docker Stack
+
+The repository's Docker assets now live under `docker/`.
+
+To run the bundled sample stack against `testing/vm-critical`:
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+If you want admin login enabled for that stack, export these before starting Compose:
+
+```bash
+export TRM_ADMIN_USERNAME=admin
+export TRM_ADMIN_PASSWORD=change-me
+export TRM_SESSION_SECRET=$(openssl rand -hex 32)
+docker compose -f docker/docker-compose.yml up --build
+```
 
 ## Containers (GHCR)
 

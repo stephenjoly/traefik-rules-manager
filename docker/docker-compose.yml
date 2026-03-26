@@ -1,6 +1,8 @@
 services:
   backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: trm-backend
     restart: unless-stopped
     environment:
@@ -10,12 +12,15 @@ services:
       - TRM_PORT=3001
       - TRM_HOST=0.0.0.0
       - TRM_LOG_LEVEL=debug
+      - TRM_ADMIN_USERNAME=${TRM_ADMIN_USERNAME:-}
+      - TRM_ADMIN_PASSWORD=${TRM_ADMIN_PASSWORD:-}
+      - TRM_SESSION_SECRET=${TRM_SESSION_SECRET:-}
     ports:
       - "3001:3001"
     volumes:
-      - ./testing/vm-critical/dynamic:/config/dynamic
-      - ./testing/vm-critical/metadata:/config/metadata
-      - ./testing/vm-critical/backups:/config/backups
+      - ../testing/vm-critical/dynamic:/config/dynamic
+      - ../testing/vm-critical/metadata:/config/metadata
+      - ../testing/vm-critical/backups:/config/backups
 
   frontend:
     image: node:20-alpine
@@ -27,7 +32,7 @@ services:
     environment:
       - VITE_API_BASE=http://localhost:3001
     volumes:
-      - ./:/app
+      - ../:/app
       - /app/node_modules
     depends_on:
       - backend

@@ -21,11 +21,11 @@ jobs:
       matrix:
         include:
           - name: backend
-            file: Dockerfile
+            file: docker/Dockerfile
             context: .
             port: 3001
           - name: frontend
-            file: Dockerfile.frontend
+            file: docker/Dockerfile.frontend
             context: .
             port: 4173
 

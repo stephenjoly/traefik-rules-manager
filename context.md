@@ -573,6 +573,8 @@ project-root/
         └── ...
 ```
 
+For this repository specifically, long-form documentation lives under `docs/` and Docker assets live under `docker/`.
+
 ### Dockerfile Requirements
 
 The TRM Dockerfile should:
@@ -754,9 +756,9 @@ app.get('/health', (req, res) => {
 ### User Experience Flow
 
 1. **User has existing Traefik setup** with YAML files in `/path/to/traefik/dynamic/`
-2. **User downloads docker-compose.yml** for TRM
-3. **User updates volumes** in docker-compose.yml to point to their Traefik directory
-4. **User runs** `docker-compose up -d`
+2. **User downloads the sample `docker/docker-compose.yml`** for TRM
+3. **User updates volumes** in that Compose file to point to their Traefik directory
+4. **User runs** `docker compose -f docker/docker-compose.yml up -d`
 5. **TRM starts and scans** the dynamic config directory
 6. **TRM displays all existing rules** in the web UI immediately
 7. **User can edit/create/delete rules** through the UI
@@ -859,14 +861,14 @@ Complete list of environment variables:
 1. Create a directory for your deployment:
    mkdir traefik-rules-manager && cd traefik-rules-manager
 
-2. Download the docker-compose.yml file
+2. Download the sample `docker/docker-compose.yml` file
 
 3. Update the volume paths to point to your existing Traefik directory:
    volumes:
      - /your/path/to/traefik/dynamic:/config/dynamic
 
 4. Start the services:
-   docker-compose up -d
+   docker compose -f docker/docker-compose.yml up -d
 
 5. Access the TRM web interface:
    http://localhost:3001
