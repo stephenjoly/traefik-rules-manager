@@ -10,6 +10,7 @@ type ApiKeysPageProps = {
   lastCreatedKey: string | null;
   username?: string;
   onBack: () => void;
+  onDismissLastCreatedKey: () => void;
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
   onRefresh: () => Promise<void>;
   onRevoke: (id: string) => Promise<void>;
@@ -22,6 +23,7 @@ export default function ApiKeysPage({
   lastCreatedKey,
   username,
   onBack,
+  onDismissLastCreatedKey,
   onCreate,
   onRefresh,
   onRevoke,
@@ -68,6 +70,7 @@ export default function ApiKeysPage({
           apiKeys={apiKeys}
           loading={loading}
           lastCreatedKey={lastCreatedKey}
+          onDismissLastCreatedKey={onDismissLastCreatedKey}
           onCreate={onCreate}
           onRefresh={onRefresh}
           onRevoke={onRevoke}

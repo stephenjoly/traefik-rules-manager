@@ -1,11 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Copy, KeyRound, RefreshCw, ShieldAlert } from 'lucide-react';
+import { toast } from 'sonner';
 import { ApiKeyRecord } from '../types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -19,6 +28,7 @@ type ApiKeysAdminProps = {
   apiKeys: ApiKeyRecord[];
   loading?: boolean;
   lastCreatedKey: string | null;
+  onDismissLastCreatedKey: () => void;
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
   onRefresh: () => Promise<void>;
   onRevoke: (id: string) => Promise<void>;
@@ -39,6 +49,7 @@ export default function ApiKeysAdmin({
   apiKeys,
   loading = false,
   lastCreatedKey,
+  onDismissLastCreatedKey,
   onCreate,
   onRefresh,
   onRevoke
@@ -64,8 +75,37 @@ export default function ApiKeysAdmin({
   };
 
   const copyToClipboard = async (value: string) => {
-    if (!navigator?.clipboard) return;
-    await navigator.clipboard.writeText(value);
+    if (navigator?.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(input);
+
+    if (!copied) {
+      throw new Error('Clipboard copy failed');
+    }
+  };
+
+  const handleCopyKey = async () => {
+    if (!lastCreatedKey) return;
+
+    try {
+      await copyToClipboard(lastCreatedKey);
+      toast.success('API key copied');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to copy API key');
+    }
   };
 
   const curlExample = activeKey
@@ -86,6 +126,40 @@ export default function ApiKeysAdmin({
 
   return (
     <div className="space-y-6">
+      <AlertDialog open={Boolean(lastCreatedKey)}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Copy Your One-Time API Key</AlertDialogTitle>
+            <AlertDialogDescription>
+              This plaintext key is only shown once. Copy it now before closing this dialog.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4">
+            <Alert>
+              <ShieldAlert className="h-4 w-4" />
+              <AlertDescription>
+                Once you click Done, this value is removed from the UI and cannot be retrieved again from the server.
+              </AlertDescription>
+            </Alert>
+
+            <div className="max-h-48 overflow-y-auto rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-100 break-all">
+              {lastCreatedKey}
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={handleCopyKey}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Key
+              </Button>
+              <AlertDialogAction onClick={onDismissLastCreatedKey}>
+                Done
+              </AlertDialogAction>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
@@ -130,26 +204,20 @@ export default function ApiKeysAdmin({
         <Card>
           <CardHeader>
             <CardTitle>One-Time Secret</CardTitle>
-            <CardDescription>The most recently created plaintext key is only available in this view right now.</CardDescription>
+            <CardDescription>New plaintext keys open in a dedicated one-time modal instead of persisting on the page.</CardDescription>
           </CardHeader>
           <CardContent>
-            {lastCreatedKey ? (
-              <div className="space-y-3">
-                <Alert>
-                  <ShieldAlert className="h-4 w-4" />
-                  <AlertDescription>Copy this value now. It cannot be retrieved again from the server.</AlertDescription>
-                </Alert>
-                <div className="rounded-md border bg-slate-950 p-4 font-mono text-sm text-slate-100 break-all">
-                  {lastCreatedKey}
-                </div>
-                <Button variant="secondary" onClick={() => copyToClipboard(lastCreatedKey)}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Key
-                </Button>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-600">No new plaintext key in this session.</p>
-            )}
+            <div className="space-y-3">
+              <Alert>
+                <ShieldAlert className="h-4 w-4" />
+                <AlertDescription>
+                  After you create a key, a modal appears so you can copy it once and explicitly dismiss it.
+                </AlertDescription>
+              </Alert>
+              <p className="text-sm text-gray-600">
+                Plaintext secrets are never shown again after you click Done.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -324,6 +324,10 @@ export default function App() {
     setCurrentView('dashboard');
   };
 
+  const handleDismissLastCreatedKey = () => {
+    setLastCreatedKey(null);
+  };
+
   const handleCreateApiKey = async (input: { name: string; expiresAt?: string }) => {
     try {
       const created = await apiCreateApiKey(apiBase, input);
@@ -440,6 +444,7 @@ export default function App() {
           lastCreatedKey={lastCreatedKey}
           username={session.username}
           onBack={handleBackFromApiKeys}
+          onDismissLastCreatedKey={handleDismissLastCreatedKey}
           onCreate={handleCreateApiKey}
           onRefresh={loadApiKeys}
           onRevoke={handleRevokeApiKey}
