@@ -160,6 +160,7 @@ For production deployments:
 - `GET /api/admin/api-keys` – list API keys without secrets
 - `POST /api/admin/api-keys` – create a new API key and return the plaintext once
 - `POST /api/admin/api-keys/:id/revoke` – revoke a key
+- `DELETE /api/admin/api-keys/:id` – permanently delete a key
 - `POST /api/automation/rules` – create a rule with bearer auth
 - `GET /api/automation/rules` – list rules with bearer auth
 - `GET /api/automation/rules/:id` – fetch a rule with bearer auth

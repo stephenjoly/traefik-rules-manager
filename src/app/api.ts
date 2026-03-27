@@ -103,3 +103,9 @@ export async function apiRevokeApiKey(base: string, id: string) {
     method: 'POST'
   });
 }
+
+export async function apiDeleteApiKey(base: string, id: string) {
+  return request<void>(`${base}/api/admin/api-keys/${id}`, {
+    method: 'DELETE'
+  });
+}

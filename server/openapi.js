@@ -587,6 +587,23 @@ export function createOpenApiSpec(serverUrl = 'http://localhost:3001') {
           }
         }
       },
+      '/api/admin/api-keys/{id}': {
+        delete: {
+          tags: ['API Keys'],
+          summary: 'Permanently delete an API key',
+          security: [{ cookieAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            204: {
+              description: 'API key deleted'
+            },
+            401: { $ref: '#/components/responses/Unauthorized' },
+            404: { $ref: '#/components/responses/NotFound' }
+          }
+        }
+      },
       '/api/automation/rules': {
         get: {
           tags: ['Automation'],

@@ -19,7 +19,7 @@ import {
 } from './rules-service.js';
 import { normalizeRule, validateRule } from './validation.js';
 import { initAuth } from './auth.js';
-import { authenticateApiKey, createApiKey, listApiKeys, revokeApiKey } from './api-keys.js';
+import { authenticateApiKey, createApiKey, deleteApiKey, listApiKeys, revokeApiKey } from './api-keys.js';
 import { createOpenApiSpec, renderSwaggerHtml } from './openapi.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -315,6 +315,15 @@ export async function createApp() {
     try {
       const record = await revokeApiKey(config, req.params.id, req.auth.username);
       res.json(record);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.delete('/api/admin/api-keys/:id', auth.requireAdminSession, async (req, res, next) => {
+    try {
+      await deleteApiKey(config, req.params.id);
+      res.status(204).send();
     } catch (err) {
       next(err);
     }

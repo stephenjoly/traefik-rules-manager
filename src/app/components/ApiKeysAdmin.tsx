@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Copy, KeyRound, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Copy, KeyRound, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ApiKeyRecord } from '../types';
 import { Button } from './ui/button';
@@ -10,10 +10,13 @@ import { Alert, AlertDescription } from './ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from './ui/alert-dialog';
 import {
   Table,
@@ -30,6 +33,7 @@ type ApiKeysAdminProps = {
   lastCreatedKey: string | null;
   onDismissLastCreatedKey: () => void;
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   onRevoke: (id: string) => Promise<void>;
 };
@@ -51,6 +55,7 @@ export default function ApiKeysAdmin({
   lastCreatedKey,
   onDismissLastCreatedKey,
   onCreate,
+  onDelete,
   onRefresh,
   onRevoke
 }: ApiKeysAdminProps) {
@@ -266,14 +271,46 @@ export default function ApiKeysAdmin({
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onRevoke(key.id)}
-                        disabled={loading || Boolean(key.revokedAt)}
-                      >
-                        Revoke
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRevoke(key.id)}
+                          disabled={loading || Boolean(key.revokedAt)}
+                        >
+                          Revoke
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              disabled={loading}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-md">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete API Key</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Delete "{key.name}" permanently. This removes it from the audit list and any clients using it will stop working immediately.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-600 hover:bg-red-700"
+                                onClick={() => onDelete(key.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

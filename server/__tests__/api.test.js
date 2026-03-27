@@ -107,7 +107,7 @@ describe('API integration', () => {
     expect(fetchedYaml.text).toContain('Host(`api.example.com`)');
   });
 
-  it('creates API keys once, hides hashes from listings, and revokes them', async () => {
+  it('creates API keys once, hides hashes from listings, revokes them, and deletes them', async () => {
     await login();
 
     const created = await agent
@@ -134,6 +134,11 @@ describe('API integration', () => {
       .get('/api/automation/rules')
       .set('Authorization', `Bearer ${created.body.apiKey}`)
       .expect(401);
+
+    await agent.delete(`/api/admin/api-keys/${created.body.record.id}`).expect(204);
+
+    const listedAfterDelete = await agent.get('/api/admin/api-keys').expect(200);
+    expect(listedAfterDelete.body.find(key => key.id === created.body.record.id)).toBeUndefined();
   });
 
   it('allows automation full CRUD and updates lastUsedAt for valid keys', async () => {

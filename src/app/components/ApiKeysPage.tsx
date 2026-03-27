@@ -1,8 +1,9 @@
-import { ArrowLeft, KeyRound, LogOut } from 'lucide-react';
+import { ArrowLeft, ExternalLink, KeyRound, LogOut } from 'lucide-react';
 import type { ApiKeyRecord } from '../types';
 import ApiKeysAdmin from './ApiKeysAdmin';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 type ApiKeysPageProps = {
   apiKeys: ApiKeyRecord[];
@@ -11,7 +12,9 @@ type ApiKeysPageProps = {
   username?: string;
   onBack: () => void;
   onDismissLastCreatedKey: () => void;
+  apiDocsUrl: string;
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   onRevoke: (id: string) => Promise<void>;
   onLogout: () => void;
@@ -24,7 +27,9 @@ export default function ApiKeysPage({
   username,
   onBack,
   onDismissLastCreatedKey,
+  apiDocsUrl,
   onCreate,
+  onDelete,
   onRefresh,
   onRevoke,
   onLogout
@@ -45,7 +50,7 @@ export default function ApiKeysPage({
                   <h1 className="text-3xl">Automation API Keys</h1>
                 </div>
                 <p className="max-w-3xl text-sm text-gray-600">
-                  Create and revoke one-time bearer credentials for automation clients without squeezing the workflow into a modal.
+                  Create, revoke, and permanently delete bearer credentials for automation clients without squeezing the workflow into a modal.
                 </p>
               </div>
             </div>
@@ -65,13 +70,34 @@ export default function ApiKeysPage({
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Test the API</CardTitle>
+            <CardDescription>
+              Use the interactive docs to sign in, create a key, and exercise both admin and automation endpoints directly.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600">
+              Open the Swagger UI, call <span className="font-mono">POST /api/auth/login</span>, then try the admin key endpoints or bearer-authenticated automation routes.
+            </p>
+            <Button asChild>
+              <a href={apiDocsUrl} target="_blank" rel="noreferrer">
+                Open API Docs
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+
         <ApiKeysAdmin
           apiKeys={apiKeys}
           loading={loading}
           lastCreatedKey={lastCreatedKey}
           onDismissLastCreatedKey={onDismissLastCreatedKey}
           onCreate={onCreate}
+          onDelete={onDelete}
           onRefresh={onRefresh}
           onRevoke={onRevoke}
         />

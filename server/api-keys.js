@@ -117,6 +117,19 @@ export async function revokeApiKey(ctx, id, revokedBy) {
   return sanitizeRecord(metadata.apiKeys[index]);
 }
 
+export async function deleteApiKey(ctx, id) {
+  const metadata = await loadMetadata(ctx.metadataPath);
+  const index = metadata.apiKeys.findIndex(key => key.id === id);
+  if (index === -1) {
+    const err = new Error('API key not found');
+    err.status = 404;
+    throw err;
+  }
+
+  metadata.apiKeys.splice(index, 1);
+  await saveMetadata(ctx.metadataPath, metadata);
+}
+
 export async function authenticateApiKey(ctx, plaintextKey) {
   const metadata = await loadMetadata(ctx.metadataPath);
   const match = String(plaintextKey || '').match(/^(trm_[^_]+)_/);

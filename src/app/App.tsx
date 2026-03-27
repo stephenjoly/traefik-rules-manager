@@ -9,6 +9,7 @@ import LoginScreen from './components/LoginScreen';
 import ApiKeysPage from './components/ApiKeysPage';
 import {
   apiCreateApiKey,
+  apiDeleteApiKey,
   apiCreateRule,
   apiDeleteRule,
   apiGetApiKeys,
@@ -358,6 +359,20 @@ export default function App() {
     }
   };
 
+  const handleDeleteApiKey = async (id: string) => {
+    try {
+      await apiDeleteApiKey(apiBase, id);
+      toast.success('API key deleted');
+      await loadApiKeys();
+    } catch (err) {
+      if (isUnauthorized(err)) {
+        handleUnauthorized();
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : 'Failed to delete API key');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-600">
@@ -445,8 +460,10 @@ export default function App() {
           username={session.username}
           onBack={handleBackFromApiKeys}
           onDismissLastCreatedKey={handleDismissLastCreatedKey}
+          apiDocsUrl={apiBase ? `${apiBase}/api-docs` : '/api-docs'}
           onCreate={handleCreateApiKey}
           onRefresh={loadApiKeys}
+          onDelete={handleDeleteApiKey}
           onRevoke={handleRevokeApiKey}
           onLogout={handleLogout}
         />
