@@ -28,6 +28,7 @@ import {
   TableRow
 } from './ui/table';
 import { Textarea } from './ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 type ApiKeysAdminProps = {
   apiKeys: ApiKeyRecord[];
@@ -201,67 +202,45 @@ export default function ApiKeysAdmin({
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              Create API Key
-            </CardTitle>
-            <CardDescription>Keys are shown once. Store the plaintext immediately after creation.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="api-key-name" className="block text-sm">Key name</label>
-              <Input
-                id="api-key-name"
-                value={name}
-                placeholder="GitHub Actions deploy"
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="api-key-expiry" className="block text-sm">Optional expiry</label>
-              <Input
-                id="api-key-expiry"
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(event) => setExpiresAt(event.target.value)}
-                min={toDatetimeLocal(new Date().toISOString())}
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Button onClick={handleCreate} disabled={submitting || loading || !name.trim()}>
-                {submitting ? 'Creating...' : 'Create Key'}
-              </Button>
-              <Button variant="outline" onClick={onRefresh} disabled={loading}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>One-Time Secret</CardTitle>
-            <CardDescription>New plaintext keys open in a dedicated one-time modal instead of persisting on the page.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Alert>
-                <ShieldAlert className="h-4 w-4" />
-                <AlertDescription>
-                  After you create a key, a modal appears so you can copy it once and explicitly dismiss it.
-                </AlertDescription>
-              </Alert>
-              <p className="text-sm text-gray-600">
-                Plaintext secrets are never shown again after you click Done.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5" />
+            Create API Key
+          </CardTitle>
+          <CardDescription>Keys are shown once in a modal. Store the plaintext immediately after creation.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="api-key-name" className="block text-sm">Key name</label>
+            <Input
+              id="api-key-name"
+              value={name}
+              placeholder="GitHub Actions deploy"
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="api-key-expiry" className="block text-sm">Optional expiry</label>
+            <Input
+              id="api-key-expiry"
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(event) => setExpiresAt(event.target.value)}
+              min={toDatetimeLocal(new Date().toISOString())}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={handleCreate} disabled={submitting || loading || !name.trim()}>
+              {submitting ? 'Creating...' : 'Create Key'}
+            </Button>
+            <Button variant="outline" onClick={onRefresh} disabled={loading}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -418,26 +397,34 @@ export default function ApiKeysAdmin({
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>cURL</CardTitle>
-            <CardDescription>Automation clients call the dedicated bearer-authenticated endpoints.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{curlExample}</pre>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>GitHub Actions</CardTitle>
-            <CardDescription>Store the plaintext key in `TRM_API_KEY` and point `TRM_BASE_URL` at this service.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{actionsSnippet}</pre>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Templates</CardTitle>
+          <CardDescription>Reusable examples for automation clients. More template types can be added here without changing the page layout.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="curl" className="gap-4">
+            <TabsList className="w-full justify-start sm:w-auto">
+              <TabsTrigger value="curl">cURL</TabsTrigger>
+              <TabsTrigger value="github-actions">GitHub Actions</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="curl" className="space-y-3">
+              <div className="text-sm text-gray-600">
+                Automation clients call the dedicated bearer-authenticated endpoints.
+              </div>
+              <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{curlExample}</pre>
+            </TabsContent>
+
+            <TabsContent value="github-actions" className="space-y-3">
+              <div className="text-sm text-gray-600">
+                Store the plaintext key in <span className="font-mono">TRM_API_KEY</span> and point <span className="font-mono">TRM_BASE_URL</span> at this service.
+              </div>
+              <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{actionsSnippet}</pre>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
