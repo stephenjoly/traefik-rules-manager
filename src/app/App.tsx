@@ -6,7 +6,7 @@ import Dashboard from './components/Dashboard';
 import AddReverseProxy from './components/AddReverseProxy';
 import EditRule from './components/EditRule';
 import LoginScreen from './components/LoginScreen';
-import ApiKeysAdmin from './components/ApiKeysAdmin';
+import ApiKeysPage from './components/ApiKeysPage';
 import {
   apiCreateApiKey,
   apiCreateRule,
@@ -36,7 +36,7 @@ import {
 } from './components/ui/dialog';
 import { duplicateRule } from './utils/rules';
 
-type View = 'setup' | 'dashboard';
+type View = 'setup' | 'dashboard' | 'apiKeys';
 type ApiError = Error & { status?: number };
 
 function resolveDefaultApiBase() {
@@ -67,7 +67,6 @@ export default function App() {
   const [draftTemplateId, setDraftTemplateId] = useState<string | undefined>(undefined);
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
   const [apiKeysLoading, setApiKeysLoading] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKeyRecord[]>([]);
   const [lastCreatedKey, setLastCreatedKey] = useState<string | null>(null);
@@ -90,7 +89,6 @@ export default function App() {
     });
     setCurrentView('setup');
     setAutoConnectTried(false);
-    setAdminOpen(false);
     setRules([]);
     setExistingMiddlewares([]);
     toast.error('Your session expired. Sign in again.');
@@ -201,7 +199,6 @@ export default function App() {
       });
       setCurrentView('setup');
       setAutoConnectTried(false);
-      setAdminOpen(false);
       setRules([]);
       setExistingMiddlewares([]);
       setLastCreatedKey(null);
@@ -316,9 +313,15 @@ export default function App() {
     }
   };
 
-  const handleOpenAdmin = async () => {
-    setAdminOpen(true);
+  const handleOpenApiKeys = async () => {
+    setCurrentView('apiKeys');
+    setLastCreatedKey(null);
     await loadApiKeys();
+  };
+
+  const handleBackFromApiKeys = () => {
+    setLastCreatedKey(null);
+    setCurrentView('dashboard');
   };
 
   const handleCreateApiKey = async (input: { name: string; expiresAt?: string }) => {
@@ -386,34 +389,11 @@ export default function App() {
             onDeleteRule={handleDeleteRule}
             onReload={handleReload}
             onChangeDirectory={() => setCurrentView('setup')}
-            onManageApiKeys={handleOpenAdmin}
+            onManageApiKeys={handleOpenApiKeys}
             onLogout={handleLogout}
             username={session.username}
             busy={actionLoading}
           />
-
-          <Dialog
-            open={adminOpen}
-            onOpenChange={(open) => {
-              setAdminOpen(open);
-              if (!open) {
-                setLastCreatedKey(null);
-              }
-            }}
-          >
-            <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
-              <DialogTitle>Automation API Keys</DialogTitle>
-              <DialogDescription>Create one-time secrets for remote rule management.</DialogDescription>
-              <ApiKeysAdmin
-                apiKeys={apiKeys}
-                loading={apiKeysLoading}
-                lastCreatedKey={lastCreatedKey}
-                onCreate={handleCreateApiKey}
-                onRefresh={loadApiKeys}
-                onRevoke={handleRevokeApiKey}
-              />
-            </DialogContent>
-          </Dialog>
 
           <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) handleBackToDashboard(); }}>
             <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
@@ -451,6 +431,20 @@ export default function App() {
             </Dialog>
           )}
         </>
+      )}
+
+      {currentView === 'apiKeys' && (
+        <ApiKeysPage
+          apiKeys={apiKeys}
+          loading={apiKeysLoading}
+          lastCreatedKey={lastCreatedKey}
+          username={session.username}
+          onBack={handleBackFromApiKeys}
+          onCreate={handleCreateApiKey}
+          onRefresh={loadApiKeys}
+          onRevoke={handleRevokeApiKey}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );
