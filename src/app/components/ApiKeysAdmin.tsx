@@ -20,6 +20,14 @@ import {
   AlertDialogTrigger,
 } from './ui/alert-dialog';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -66,6 +74,7 @@ export default function ApiKeysAdmin({
 }: ApiKeysAdminProps) {
   const [name, setName] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [testKey, setTestKey] = useState('');
   const [testingKey, setTestingKey] = useState(false);
@@ -87,6 +96,7 @@ export default function ApiKeysAdmin({
       });
       setName('');
       setExpiresAt('');
+      setCreateOpen(false);
     } finally {
       setSubmitting(false);
     }
@@ -202,50 +212,82 @@ export default function ApiKeysAdmin({
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            Create API Key
-          </CardTitle>
-          <CardDescription>Keys are shown once in a modal. Store the plaintext immediately after creation.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="api-key-name" className="block text-sm">Key name</label>
-            <Input
-              id="api-key-name"
-              value={name}
-              placeholder="GitHub Actions deploy"
-              onChange={(event) => setName(event.target.value)}
-            />
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open && !submitting) {
+            setName('');
+            setExpiresAt('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Create API Key
+            </DialogTitle>
+            <DialogDescription>
+              The plaintext key is shown once in a follow-up modal. Store it immediately after creation.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="api-key-name" className="block text-sm">Key name</label>
+              <Input
+                id="api-key-name"
+                value={name}
+                placeholder="GitHub Actions deploy"
+                onChange={(event) => setName(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="api-key-expiry" className="block text-sm">Optional expiry</label>
+              <Input
+                id="api-key-expiry"
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.target.value)}
+                min={toDatetimeLocal(new Date().toISOString())}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="api-key-expiry" className="block text-sm">Optional expiry</label>
-            <Input
-              id="api-key-expiry"
-              type="datetime-local"
-              value={expiresAt}
-              onChange={(event) => setExpiresAt(event.target.value)}
-              min={toDatetimeLocal(new Date().toISOString())}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
             <Button onClick={handleCreate} disabled={submitting || loading || !name.trim()}>
               {submitting ? 'Creating...' : 'Create Key'}
             </Button>
-            <Button variant="outline" onClick={onRefresh} disabled={loading}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
-          <CardTitle>Existing Keys</CardTitle>
-          <CardDescription>Revoked keys remain visible for auditability.</CardDescription>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>Existing Keys</CardTitle>
+              <CardDescription>Revoked keys remain visible for auditability.</CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={() => setCreateOpen(true)} disabled={loading}>
+                <KeyRound className="mr-2 h-4 w-4" />
+                Create API Key
+              </Button>
+              <Button variant="outline" onClick={onRefresh} disabled={loading}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {apiKeys.length === 0 ? (
