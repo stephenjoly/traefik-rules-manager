@@ -109,3 +109,23 @@ export async function apiDeleteApiKey(base: string, id: string) {
     method: 'DELETE'
   });
 }
+
+export async function apiTestAutomationKey(base: string, apiKey: string) {
+  const res = await fetch(`${base}/api/automation/rules`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`
+    }
+  });
+
+  const contentType = res.headers.get('content-type') || '';
+  const body = contentType.includes('application/json')
+    ? await res.json().catch(() => null)
+    : await res.text().catch(() => '');
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    body
+  };
+}

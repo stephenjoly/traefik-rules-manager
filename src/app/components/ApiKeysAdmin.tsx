@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Copy, KeyRound, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react';
+import { CheckCircle2, Copy, KeyRound, RefreshCw, ShieldAlert, TerminalSquare, Trash2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiTestAutomationKey } from '../api';
 import { ApiKeyRecord } from '../types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -26,12 +27,14 @@ import {
   TableHeader,
   TableRow
 } from './ui/table';
+import { Textarea } from './ui/textarea';
 
 type ApiKeysAdminProps = {
   apiKeys: ApiKeyRecord[];
   loading?: boolean;
   lastCreatedKey: string | null;
   onDismissLastCreatedKey: () => void;
+  automationTestUrl: string;
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
@@ -54,6 +57,7 @@ export default function ApiKeysAdmin({
   loading = false,
   lastCreatedKey,
   onDismissLastCreatedKey,
+  automationTestUrl,
   onCreate,
   onDelete,
   onRefresh,
@@ -62,6 +66,14 @@ export default function ApiKeysAdmin({
   const [name, setName] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [testKey, setTestKey] = useState('');
+  const [testingKey, setTestingKey] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    status: number;
+    statusText: string;
+    body: unknown;
+  } | null>(null);
 
   const activeKey = useMemo(() => apiKeys.find((key) => !key.revokedAt), [apiKeys]);
 
@@ -128,6 +140,30 @@ export default function ApiKeysAdmin({
       -H "Content-Type: application/json" \\
       -d '{"name":"github-action","hostname":"gh.example.com","backendUrl":["http://app:8080"],"entryPoints":["web"],"tls":true}'`
     : 'Create an API key to see a GitHub Actions example.';
+
+  const handleTestKey = async () => {
+    setTestingKey(true);
+    try {
+      const base = automationTestUrl.replace(/\/api\/automation\/rules$/, '');
+      const result = await apiTestAutomationKey(base, testKey.trim());
+      setTestResult(result);
+      if (result.ok) {
+        toast.success('API key test succeeded');
+      } else {
+        toast.error(`API key test failed: ${result.status} ${result.statusText}`);
+      }
+    } catch (err) {
+      setTestResult({
+        ok: false,
+        status: 0,
+        statusText: 'Request failed',
+        body: err instanceof Error ? { error: err.message } : { error: 'Request failed' }
+      });
+      toast.error(err instanceof Error ? err.message : 'Failed to test API key');
+    } finally {
+      setTestingKey(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -316,6 +352,68 @@ export default function ApiKeysAdmin({
                 ))}
               </TableBody>
             </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TerminalSquare className="h-5 w-5" />
+            Interactive API Key Test
+          </CardTitle>
+          <CardDescription>
+            Paste a plaintext API key and run a safe read-only check against <span className="font-mono">GET {automationTestUrl}</span>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="api-key-tester" className="block text-sm">Plaintext API key</label>
+            <Textarea
+              id="api-key-tester"
+              value={testKey}
+              placeholder="trm_xxxxxxxx_your_saved_secret"
+              onChange={(event) => setTestKey(event.target.value)}
+              className="min-h-24 font-mono text-sm"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={handleTestKey} disabled={testingKey || !testKey.trim()}>
+              {testingKey ? 'Testing...' : 'Test Key'}
+            </Button>
+            {testResult && (
+              <Badge
+                variant="outline"
+                className={testResult.ok
+                  ? 'border-green-300 bg-green-50 text-green-700'
+                  : 'border-red-300 bg-red-50 text-red-700'}
+              >
+                {testResult.ok ? (
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                ) : (
+                  <XCircle className="mr-1 h-3 w-3" />
+                )}
+                {testResult.status === 0
+                  ? testResult.statusText
+                  : `${testResult.status} ${testResult.statusText}`}
+              </Badge>
+            )}
+          </div>
+
+          <Alert>
+            <AlertDescription>
+              Success means the bearer token can reach the automation API and list rules. Failure responses are shown exactly so you can debug auth or expiry issues.
+            </AlertDescription>
+          </Alert>
+
+          {testResult && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Response</div>
+              <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">
+                {JSON.stringify(testResult.body, null, 2)}
+              </pre>
+            </div>
           )}
         </CardContent>
       </Card>

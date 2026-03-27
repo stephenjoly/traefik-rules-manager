@@ -461,6 +461,7 @@ export default function App() {
           onBack={handleBackFromApiKeys}
           onDismissLastCreatedKey={handleDismissLastCreatedKey}
           apiDocsUrl={apiBase ? `${apiBase}/api-docs` : '/api-docs'}
+          automationTestUrl={apiBase ? `${apiBase}/api/automation/rules` : '/api/automation/rules'}
           onCreate={handleCreateApiKey}
           onRefresh={loadApiKeys}
           onDelete={handleDeleteApiKey}

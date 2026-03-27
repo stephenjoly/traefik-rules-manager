@@ -13,6 +13,7 @@ type ApiKeysPageProps = {
   onBack: () => void;
   onDismissLastCreatedKey: () => void;
   apiDocsUrl: string;
+  automationTestUrl: string;
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
@@ -28,6 +29,7 @@ export default function ApiKeysPage({
   onBack,
   onDismissLastCreatedKey,
   apiDocsUrl,
+  automationTestUrl,
   onCreate,
   onDelete,
   onRefresh,
@@ -96,6 +98,7 @@ export default function ApiKeysPage({
           loading={loading}
           lastCreatedKey={lastCreatedKey}
           onDismissLastCreatedKey={onDismissLastCreatedKey}
+          automationTestUrl={automationTestUrl}
           onCreate={onCreate}
           onDelete={onDelete}
           onRefresh={onRefresh}
