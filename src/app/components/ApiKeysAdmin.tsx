@@ -650,7 +650,7 @@ export default function ApiKeysAdmin({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="live-example-base-url">Base URL</Label>
               <Input
@@ -673,27 +673,15 @@ export default function ApiKeysAdmin({
             </div>
           </div>
 
-          <Tabs
-            value={activeExampleTab}
-            onValueChange={(value) => setActiveExampleTab(value as ExampleTab)}
-            className="gap-4 md:grid md:grid-cols-[260px_minmax(0,1fr)] md:items-start"
-          >
-            <TabsList className="h-auto w-full flex-col items-stretch justify-start rounded-2xl p-1.5">
-              <TabsTrigger value="read" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
-                Read All Existing Rules
-              </TabsTrigger>
-              <TabsTrigger value="search" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
-                Search For A Specific Rule
-              </TabsTrigger>
-              <TabsTrigger value="create" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
-                Create A New Rule
-              </TabsTrigger>
-              <TabsTrigger value="delete" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
-                Delete A Specific Rule
-              </TabsTrigger>
+          <Tabs value={activeExampleTab} onValueChange={(value) => setActiveExampleTab(value as ExampleTab)} className="gap-4">
+            <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="read">Read All Existing Rules</TabsTrigger>
+              <TabsTrigger value="search">Search For A Specific Rule</TabsTrigger>
+              <TabsTrigger value="create">Create A New Rule</TabsTrigger>
+              <TabsTrigger value="delete">Delete A Specific Rule</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="read" className="space-y-4 md:mt-0">
+            <TabsContent value="read" className="space-y-4">
               <div className="space-y-2">
                 <div className="text-sm text-gray-600">
                   Fetch the full list of automation-managed rules from the current server.
@@ -701,7 +689,7 @@ export default function ApiKeysAdmin({
               </div>
             </TabsContent>
 
-            <TabsContent value="search" className="space-y-4 md:mt-0">
+            <TabsContent value="search" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="search-rule-term">Search term</Label>
                 <Input
@@ -716,7 +704,7 @@ export default function ApiKeysAdmin({
               </div>
             </TabsContent>
 
-            <TabsContent value="create" className="space-y-4 md:mt-0">
+            <TabsContent value="create" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="create-rule-body">Rule JSON</Label>
                 <Textarea
@@ -731,7 +719,7 @@ export default function ApiKeysAdmin({
               </div>
             </TabsContent>
 
-            <TabsContent value="delete" className="space-y-4 md:mt-0">
+            <TabsContent value="delete" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="delete-rule-id">Rule id</Label>
                 <Input
@@ -751,8 +739,8 @@ export default function ApiKeysAdmin({
             </TabsContent>
           </Tabs>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-            <div className="space-y-4">
+          <div className="grid items-start gap-6 xl:grid-cols-2">
+            <div className="flex h-full flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium">Generated cURL</div>
@@ -766,7 +754,7 @@ export default function ApiKeysAdmin({
                 </Button>
               </div>
 
-              <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{activeCurlCommand}</pre>
+              <pre className="min-h-[24rem] max-h-[24rem] overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{activeCurlCommand}</pre>
 
               <div className="flex flex-wrap items-center gap-3">
                 {activeExampleTab === 'read' && (
@@ -795,7 +783,7 @@ export default function ApiKeysAdmin({
               </div>
             </div>
 
-            <div className="space-y-4 rounded-xl border bg-slate-50 p-4">
+            <div className="flex h-full flex-col gap-4 rounded-xl border bg-slate-50 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium">Latest Response</div>
@@ -823,19 +811,24 @@ export default function ApiKeysAdmin({
               </div>
 
               {exampleResult ? (
-                <div className="space-y-3">
+                <div className="flex h-full flex-col gap-3">
+                  <pre className="min-h-[24rem] max-h-[24rem] overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">
+                    {exampleResult.responseBody}
+                  </pre>
                   <div className="text-sm text-gray-700">
                     <span className="font-medium">{exampleResult.method}</span>{' '}
                     <span className="font-mono text-xs">{exampleResult.path}</span>
                   </div>
                   <p className="text-sm text-gray-600">{exampleResult.summary}</p>
-                  <pre className="max-h-96 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">
-                    {exampleResult.responseBody}
-                  </pre>
                 </div>
               ) : (
-                <div className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-gray-500">
-                  No example has been run yet.
+                <div className="flex h-full flex-col gap-3">
+                  <div className="min-h-[24rem] max-h-[24rem] overflow-auto rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-gray-500">
+                    No example has been run yet.
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Run one of the examples to populate this panel.
+                  </div>
                 </div>
               )}
             </div>
