@@ -663,12 +663,12 @@ export default function ApiKeysAdmin({
             </div>
             <div className="space-y-2">
               <Label htmlFor="live-example-api-key">Plaintext API key</Label>
-              <Textarea
+              <Input
                 id="live-example-api-key"
                 value={exampleApiKey}
                 placeholder="trm_xxxxxxxx_your_saved_secret"
                 onChange={(event) => setExampleApiKey(event.target.value)}
-                className="min-h-20 font-mono text-sm"
+                className="font-mono text-sm"
               />
             </div>
           </div>
