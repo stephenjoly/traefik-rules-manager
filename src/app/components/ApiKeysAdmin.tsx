@@ -673,15 +673,27 @@ export default function ApiKeysAdmin({
             </div>
           </div>
 
-          <Tabs value={activeExampleTab} onValueChange={(value) => setActiveExampleTab(value as ExampleTab)} className="gap-4">
-            <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4">
-              <TabsTrigger value="read">Read All Existing Rules</TabsTrigger>
-              <TabsTrigger value="search">Search For A Specific Rule</TabsTrigger>
-              <TabsTrigger value="create">Create A New Rule</TabsTrigger>
-              <TabsTrigger value="delete">Delete A Specific Rule</TabsTrigger>
+          <Tabs
+            value={activeExampleTab}
+            onValueChange={(value) => setActiveExampleTab(value as ExampleTab)}
+            className="gap-4 md:grid md:grid-cols-[260px_minmax(0,1fr)] md:items-start"
+          >
+            <TabsList className="h-auto w-full flex-col items-stretch justify-start rounded-2xl p-1.5">
+              <TabsTrigger value="read" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
+                Read All Existing Rules
+              </TabsTrigger>
+              <TabsTrigger value="search" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
+                Search For A Specific Rule
+              </TabsTrigger>
+              <TabsTrigger value="create" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
+                Create A New Rule
+              </TabsTrigger>
+              <TabsTrigger value="delete" className="w-full justify-start px-4 py-3 text-left whitespace-normal">
+                Delete A Specific Rule
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="read" className="space-y-4">
+            <TabsContent value="read" className="space-y-4 md:mt-0">
               <div className="space-y-2">
                 <div className="text-sm text-gray-600">
                   Fetch the full list of automation-managed rules from the current server.
@@ -689,7 +701,7 @@ export default function ApiKeysAdmin({
               </div>
             </TabsContent>
 
-            <TabsContent value="search" className="space-y-4">
+            <TabsContent value="search" className="space-y-4 md:mt-0">
               <div className="space-y-2">
                 <Label htmlFor="search-rule-term">Search term</Label>
                 <Input
@@ -704,7 +716,7 @@ export default function ApiKeysAdmin({
               </div>
             </TabsContent>
 
-            <TabsContent value="create" className="space-y-4">
+            <TabsContent value="create" className="space-y-4 md:mt-0">
               <div className="space-y-2">
                 <Label htmlFor="create-rule-body">Rule JSON</Label>
                 <Textarea
@@ -719,7 +731,7 @@ export default function ApiKeysAdmin({
               </div>
             </TabsContent>
 
-            <TabsContent value="delete" className="space-y-4">
+            <TabsContent value="delete" className="space-y-4 md:mt-0">
               <div className="space-y-2">
                 <Label htmlFor="delete-rule-id">Rule id</Label>
                 <Input
