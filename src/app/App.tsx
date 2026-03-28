@@ -314,6 +314,19 @@ export default function App() {
     }
   };
 
+  const refreshRulesState = async () => {
+    try {
+      await loadRules();
+      await loadMiddlewares();
+    } catch (err) {
+      if (isUnauthorized(err)) {
+        handleUnauthorized();
+        return;
+      }
+      toast.error(err instanceof Error ? err.message : 'Failed to refresh rules');
+    }
+  };
+
   const handleOpenApiKeys = async () => {
     setCurrentView('apiKeys');
     setLastCreatedKey(null);
@@ -462,8 +475,10 @@ export default function App() {
           onDismissLastCreatedKey={handleDismissLastCreatedKey}
           apiDocsUrl={apiBase ? `${apiBase}/api-docs` : '/api-docs'}
           automationTestUrl={apiBase ? `${apiBase}/api/automation/rules` : '/api/automation/rules'}
+          rules={rules}
           onCreate={handleCreateApiKey}
           onRefresh={loadApiKeys}
+          onRefreshRules={refreshRulesState}
           onDelete={handleDeleteApiKey}
           onRevoke={handleRevokeApiKey}
           onLogout={handleLogout}

@@ -1,5 +1,5 @@
 import { ArrowLeft, ExternalLink, KeyRound, LogOut } from 'lucide-react';
-import type { ApiKeyRecord } from '../types';
+import type { ApiKeyRecord, TraefikRule } from '../types';
 import ApiKeysAdmin from './ApiKeysAdmin';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -14,9 +14,11 @@ type ApiKeysPageProps = {
   onDismissLastCreatedKey: () => void;
   apiDocsUrl: string;
   automationTestUrl: string;
+  rules: TraefikRule[];
   onCreate: (input: { name: string; expiresAt?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
+  onRefreshRules: () => Promise<void>;
   onRevoke: (id: string) => Promise<void>;
   onLogout: () => void;
 };
@@ -30,9 +32,11 @@ export default function ApiKeysPage({
   onDismissLastCreatedKey,
   apiDocsUrl,
   automationTestUrl,
+  rules,
   onCreate,
   onDelete,
   onRefresh,
+  onRefreshRules,
   onRevoke,
   onLogout
 }: ApiKeysPageProps) {
@@ -99,9 +103,11 @@ export default function ApiKeysPage({
           lastCreatedKey={lastCreatedKey}
           onDismissLastCreatedKey={onDismissLastCreatedKey}
           automationTestUrl={automationTestUrl}
+          rules={rules}
           onCreate={onCreate}
           onDelete={onDelete}
           onRefresh={onRefresh}
+          onRefreshRules={onRefreshRules}
           onRevoke={onRevoke}
         />
       </div>

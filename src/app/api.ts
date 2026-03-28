@@ -110,15 +110,24 @@ export async function apiDeleteApiKey(base: string, id: string) {
   });
 }
 
-export async function apiTestAutomationKey(base: string, apiKey: string) {
-  const res = await fetch(`${base}/api/automation/rules`, {
+export async function apiRunAutomationRequest(
+  base: string,
+  apiKey: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  path: string,
+  body?: unknown
+) {
+  const res = await fetch(`${base}${path}`, {
+    method,
     headers: {
-      Authorization: `Bearer ${apiKey}`
-    }
+      Authorization: `Bearer ${apiKey}`,
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {})
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {})
   });
 
   const contentType = res.headers.get('content-type') || '';
-  const body = contentType.includes('application/json')
+  const parsedBody = contentType.includes('application/json')
     ? await res.json().catch(() => null)
     : await res.text().catch(() => '');
 
@@ -126,6 +135,14 @@ export async function apiTestAutomationKey(base: string, apiKey: string) {
     ok: res.ok,
     status: res.status,
     statusText: res.statusText,
-    body
+    body: parsedBody,
+    message:
+      typeof parsedBody === 'object' && parsedBody !== null
+        ? (parsedBody as { error?: string; message?: string }).error ||
+          (parsedBody as { error?: string; message?: string }).message ||
+          null
+        : typeof parsedBody === 'string' && parsedBody.trim()
+          ? parsedBody.trim()
+          : null
   };
 }
