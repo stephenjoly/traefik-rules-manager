@@ -82,7 +82,6 @@ export default function ApiKeysAdmin({
     ok: boolean;
     status: number;
     statusText: string;
-    body: unknown;
   } | null>(null);
 
   const activeKey = useMemo(() => apiKeys.find((key) => !key.revokedAt), [apiKeys]);
@@ -168,7 +167,6 @@ export default function ApiKeysAdmin({
         ok: false,
         status: 0,
         statusText: 'Request failed',
-        body: err instanceof Error ? { error: err.message } : { error: 'Request failed' }
       });
       toast.error(err instanceof Error ? err.message : 'Failed to test API key');
     } finally {
@@ -424,18 +422,9 @@ export default function ApiKeysAdmin({
 
           <Alert>
             <AlertDescription>
-              Success means the bearer token can reach the automation API and list rules. Failure responses are shown exactly so you can debug auth or expiry issues.
+              Success means the bearer token can reach the automation API and list rules. The tester only shows a simple pass/fail status and HTTP code.
             </AlertDescription>
           </Alert>
-
-          {testResult && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Response</div>
-              <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">
-                {JSON.stringify(testResult.body, null, 2)}
-              </pre>
-            </div>
-          )}
         </CardContent>
       </Card>
 
