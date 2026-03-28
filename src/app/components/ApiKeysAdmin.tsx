@@ -59,6 +59,9 @@ type ExampleResult = {
   status: number;
   statusText: string;
   summary: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  path: string;
+  responseBody: string;
 };
 
 const SAMPLE_RULE_PREFIX = 'playground-sample-rule';
@@ -83,6 +86,26 @@ function toDatetimeLocal(value: string) {
 
 function stringifyJson(value: unknown) {
   return JSON.stringify(value, null, 2);
+}
+
+function shellQuote(value: string) {
+  return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+}
+
+function normalizeBaseUrl(value: string) {
+  return value.trim().replace(/\/$/, '');
+}
+
+function formatResponseBody(value: unknown) {
+  if (value === undefined || value === null || value === '') {
+    return 'No response body';
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return stringifyJson(value);
 }
 
 function copyWithFallback(value: string) {
@@ -128,6 +151,7 @@ export default function ApiKeysAdmin({
   const [submitting, setSubmitting] = useState(false);
 
   const [activeExampleTab, setActiveExampleTab] = useState<ExampleTab>('read');
+  const [exampleBaseUrl, setExampleBaseUrl] = useState('');
   const [exampleApiKey, setExampleApiKey] = useState('');
   const [exampleBusy, setExampleBusy] = useState(false);
   const [exampleResult, setExampleResult] = useState<ExampleResult | null>(null);
@@ -149,6 +173,10 @@ export default function ApiKeysAdmin({
       setExampleApiKey(lastCreatedKey);
     }
   }, [lastCreatedKey]);
+
+  useEffect(() => {
+    setExampleBaseUrl(automationBase);
+  }, [automationBase]);
 
   const handleCreate = async () => {
     setSubmitting(true);
@@ -187,9 +215,14 @@ export default function ApiKeysAdmin({
     path: string;
     body?: unknown;
     successSummary: string;
-    onSuccess?: (responseBody: unknown) => string;
+    onSuccess?: (responseBody: unknown) => { summary: string; responseBody?: unknown };
   }) => {
+    const baseUrl = normalizeBaseUrl(exampleBaseUrl);
     const apiKey = exampleApiKey.trim();
+    if (!baseUrl) {
+      toast.error('Provide a base URL first');
+      return;
+    }
     if (!apiKey) {
       toast.error('Paste a plaintext API key first');
       return;
@@ -197,11 +230,16 @@ export default function ApiKeysAdmin({
 
     setExampleBusy(true);
     try {
-      const result = await apiRunAutomationRequest(automationBase, apiKey, method, path, body);
+      const result = await apiRunAutomationRequest(baseUrl, apiKey, method, path, body);
 
       let summary = successSummary;
+      let responseBody = result.body;
       if (result.ok && onSuccess) {
-        summary = onSuccess(result.body);
+        const successDetails = onSuccess(result.body);
+        summary = successDetails.summary;
+        if (successDetails.responseBody !== undefined) {
+          responseBody = successDetails.responseBody;
+        }
       } else if (!result.ok) {
         summary = result.message || `${result.status} ${result.statusText}`;
       }
@@ -210,16 +248,16 @@ export default function ApiKeysAdmin({
         ok: result.ok,
         status: result.status,
         statusText: result.statusText,
-        summary
+        summary,
+        method,
+        path,
+        responseBody: formatResponseBody(responseBody)
       });
 
       if (result.ok) {
-        toast.success(summary);
         if (method !== 'GET') {
           await onRefreshRules();
         }
-      } else {
-        toast.error(summary);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to run example request';
@@ -227,7 +265,10 @@ export default function ApiKeysAdmin({
         ok: false,
         status: 0,
         statusText: 'Request failed',
-        summary: message
+        summary: message,
+        method,
+        path,
+        responseBody: message
       });
       toast.error(message);
     } finally {
@@ -242,7 +283,9 @@ export default function ApiKeysAdmin({
       successSummary: 'Read rules succeeded',
       onSuccess: (responseBody) => {
         const count = Array.isArray(responseBody) ? responseBody.length : 0;
-        return `Read ${count} rules`;
+        return {
+          summary: `Read ${count} rules`
+        };
       }
     });
   };
@@ -268,7 +311,10 @@ export default function ApiKeysAdmin({
 
           return !query || fields.some((field) => field.includes(query));
         });
-        return `Found ${matches.length} matching rule${matches.length === 1 ? '' : 's'}${query ? ` for "${searchTerm.trim()}"` : ''}`;
+        return {
+          summary: `Found ${matches.length} matching rule${matches.length === 1 ? '' : 's'}${query ? ` for "${searchTerm.trim()}"` : ''}`,
+          responseBody: matches
+        };
       }
     });
   };
@@ -315,19 +361,46 @@ export default function ApiKeysAdmin({
     });
   };
 
-  const readRulesCurl = `curl "$TRM_BASE_URL/api/automation/rules" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`;
+  const searchTermValue = searchTerm.trim().toLowerCase() || 'playground';
+  const currentBaseUrl = normalizeBaseUrl(exampleBaseUrl) || automationBase;
+  const currentApiKey = exampleApiKey.trim() || 'YOUR_API_KEY';
 
-  const searchRulesCurl = `curl "$TRM_BASE_URL/api/automation/rules" \\
-  -H "Authorization: Bearer YOUR_API_KEY" | jq '.[] | select(.name | contains("${searchTerm.trim() || 'playground'}"))'`;
+  const readRulesCurl = `curl ${shellQuote(`${currentBaseUrl}/api/automation/rules`)} \\
+  -H ${shellQuote(`Authorization: Bearer ${currentApiKey}`)}`;
 
-  const createRuleCurl = `curl -X POST "$TRM_BASE_URL/api/automation/rules" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '${createRuleBody.replace(/\n/g, '\n')}'`;
+  const searchRulesCurl = `curl ${shellQuote(`${currentBaseUrl}/api/automation/rules`)} \\
+  -H ${shellQuote(`Authorization: Bearer ${currentApiKey}`)} | jq --arg query ${shellQuote(searchTermValue)} '.[] | select(
+    ((.name // "") | ascii_downcase | contains($query)) or
+    ((.fileName // "") | ascii_downcase | contains($query)) or
+    ((.routerName // "") | ascii_downcase | contains($query)) or
+    ((.serviceName // "") | ascii_downcase | contains($query)) or
+    ((.hostname // "") | ascii_downcase | contains($query))
+  )'`;
 
-  const deleteRuleCurl = `curl -X DELETE "$TRM_BASE_URL${deleteTargetPath}" \\
-  -H "Authorization: Bearer YOUR_API_KEY"`;
+  const createRuleCurl = `curl -X POST ${shellQuote(`${currentBaseUrl}/api/automation/rules`)} \\
+  -H ${shellQuote(`Authorization: Bearer ${currentApiKey}`)} \\
+  -H 'Content-Type: application/json' \\
+  --data-raw ${shellQuote(createRuleBody)}`;
+
+  const deleteRuleCurl = `curl -X DELETE ${shellQuote(`${currentBaseUrl}${deleteTargetPath}`)} \\
+  -H ${shellQuote(`Authorization: Bearer ${currentApiKey}`)}`;
+
+  const activeCurlCommand = activeExampleTab === 'read'
+    ? readRulesCurl
+    : activeExampleTab === 'search'
+      ? searchRulesCurl
+      : activeExampleTab === 'create'
+        ? createRuleCurl
+        : deleteRuleCurl;
+
+  const handleCopyCurl = async () => {
+    try {
+      await copyWithFallback(activeCurlCommand);
+      toast.success('cURL command copied');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to copy cURL command');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -573,19 +646,31 @@ export default function ApiKeysAdmin({
         <CardHeader>
           <CardTitle>Live Examples</CardTitle>
           <CardDescription>
-            Run a few common automation requests directly from this page with your bearer key. Results stay compact, but successful create/delete actions refresh the dashboard state behind the scenes.
+            Build a ready-to-run cURL command with your current base URL and bearer key, then execute it here and inspect the response inline.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="live-example-api-key">Plaintext API key</Label>
-            <Textarea
-              id="live-example-api-key"
-              value={exampleApiKey}
-              placeholder="trm_xxxxxxxx_your_saved_secret"
-              onChange={(event) => setExampleApiKey(event.target.value)}
-              className="min-h-20 font-mono text-sm"
-            />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="live-example-base-url">Base URL</Label>
+              <Input
+                id="live-example-base-url"
+                value={exampleBaseUrl}
+                placeholder="http://localhost:3001"
+                onChange={(event) => setExampleBaseUrl(event.target.value)}
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="live-example-api-key">Plaintext API key</Label>
+              <Textarea
+                id="live-example-api-key"
+                value={exampleApiKey}
+                placeholder="trm_xxxxxxxx_your_saved_secret"
+                onChange={(event) => setExampleApiKey(event.target.value)}
+                className="min-h-20 font-mono text-sm"
+              />
+            </div>
           </div>
 
           <Tabs value={activeExampleTab} onValueChange={(value) => setActiveExampleTab(value as ExampleTab)} className="gap-4">
@@ -598,13 +683,9 @@ export default function ApiKeysAdmin({
 
             <TabsContent value="read" className="space-y-4">
               <div className="space-y-2">
-                <div className="text-sm font-medium">Sample cURL</div>
-                <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{readRulesCurl}</pre>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={handleRunReadRules} disabled={exampleBusy || !exampleApiKey.trim()}>
-                  {exampleBusy ? 'Running...' : 'Run Example'}
-                </Button>
+                <div className="text-sm text-gray-600">
+                  Fetch the full list of automation-managed rules from the current server.
+                </div>
               </div>
             </TabsContent>
 
@@ -618,14 +699,8 @@ export default function ApiKeysAdmin({
                   placeholder="portainer"
                 />
               </div>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Sample cURL</div>
-                <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{searchRulesCurl}</pre>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={handleRunSearchRules} disabled={exampleBusy || !exampleApiKey.trim()}>
-                  {exampleBusy ? 'Running...' : 'Run Example'}
-                </Button>
+              <div className="text-sm text-gray-600">
+                Run a list request, then filter the response by name, file, router, service, or hostname.
               </div>
             </TabsContent>
 
@@ -639,14 +714,8 @@ export default function ApiKeysAdmin({
                   className="min-h-48 font-mono text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Sample cURL</div>
-                <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{createRuleCurl}</pre>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={handleRunCreateRule} disabled={exampleBusy || !exampleApiKey.trim()}>
-                  {exampleBusy ? 'Running...' : 'Run Example'}
-                </Button>
+              <div className="text-sm text-gray-600">
+                Start from the sample payload, adjust it, then create a rule through the automation API.
               </div>
             </TabsContent>
 
@@ -667,41 +736,98 @@ export default function ApiKeysAdmin({
                     : 'No sample rule is currently detected. Create the sample first or paste a valid rule id.'}
                 </AlertDescription>
               </Alert>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Sample cURL</div>
-                <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{deleteRuleCurl}</pre>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  onClick={handleRunDeleteRule}
-                  disabled={exampleBusy || !exampleApiKey.trim() || !deleteTargetId}
-                >
-                  {exampleBusy ? 'Running...' : 'Run Example'}
-                </Button>
-              </div>
             </TabsContent>
           </Tabs>
 
-          {exampleResult && (
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge
-                variant="outline"
-                className={exampleResult.ok
-                  ? 'border-green-300 bg-green-50 text-green-700'
-                  : 'border-red-300 bg-red-50 text-red-700'}
-              >
-                {exampleResult.ok ? (
-                  <CheckCircle2 className="mr-1 h-3 w-3" />
-                ) : (
-                  <XCircle className="mr-1 h-3 w-3" />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium">Generated cURL</div>
+                  <div className="text-sm text-gray-600">
+                    This command uses the base URL and plaintext key currently entered above.
+                  </div>
+                </div>
+                <Button variant="outline" onClick={handleCopyCurl}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy cURL
+                </Button>
+              </div>
+
+              <pre className="overflow-x-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{activeCurlCommand}</pre>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {activeExampleTab === 'read' && (
+                  <Button onClick={handleRunReadRules} disabled={exampleBusy || !exampleApiKey.trim() || !exampleBaseUrl.trim()}>
+                    {exampleBusy ? 'Running...' : 'Run Example'}
+                  </Button>
                 )}
-                {exampleResult.status === 0
-                  ? exampleResult.statusText
-                  : `${exampleResult.status} ${exampleResult.statusText}`}
-              </Badge>
-              <span className="text-sm text-gray-600">{exampleResult.summary}</span>
+                {activeExampleTab === 'search' && (
+                  <Button onClick={handleRunSearchRules} disabled={exampleBusy || !exampleApiKey.trim() || !exampleBaseUrl.trim()}>
+                    {exampleBusy ? 'Running...' : 'Run Example'}
+                  </Button>
+                )}
+                {activeExampleTab === 'create' && (
+                  <Button onClick={handleRunCreateRule} disabled={exampleBusy || !exampleApiKey.trim() || !exampleBaseUrl.trim()}>
+                    {exampleBusy ? 'Running...' : 'Run Example'}
+                  </Button>
+                )}
+                {activeExampleTab === 'delete' && (
+                  <Button
+                    onClick={handleRunDeleteRule}
+                    disabled={exampleBusy || !exampleApiKey.trim() || !exampleBaseUrl.trim() || !deleteTargetId}
+                  >
+                    {exampleBusy ? 'Running...' : 'Run Example'}
+                  </Button>
+                )}
+              </div>
             </div>
-          )}
+
+            <div className="space-y-4 rounded-xl border bg-slate-50 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium">Latest Response</div>
+                  <div className="text-sm text-gray-600">
+                    Run an example to inspect the status and response payload here.
+                  </div>
+                </div>
+                {exampleResult && (
+                  <Badge
+                    variant="outline"
+                    className={exampleResult.ok
+                      ? 'border-green-300 bg-green-50 text-green-700'
+                      : 'border-red-300 bg-red-50 text-red-700'}
+                  >
+                    {exampleResult.ok ? (
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                    ) : (
+                      <XCircle className="mr-1 h-3 w-3" />
+                    )}
+                    {exampleResult.status === 0
+                      ? exampleResult.statusText
+                      : `${exampleResult.status} ${exampleResult.statusText}`}
+                  </Badge>
+                )}
+              </div>
+
+              {exampleResult ? (
+                <div className="space-y-3">
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">{exampleResult.method}</span>{' '}
+                    <span className="font-mono text-xs">{exampleResult.path}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{exampleResult.summary}</p>
+                  <pre className="max-h-96 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">
+                    {exampleResult.responseBody}
+                  </pre>
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-gray-500">
+                  No example has been run yet.
+                </div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
