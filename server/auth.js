@@ -30,7 +30,17 @@ function parseCookies(header = '') {
       const eqIndex = part.indexOf('=');
       if (eqIndex === -1) return cookies;
       const key = part.slice(0, eqIndex);
-      const value = decodeURIComponent(part.slice(eqIndex + 1));
+      const rawValue = part.slice(eqIndex + 1);
+      let value = rawValue;
+
+      try {
+        value = decodeURIComponent(rawValue);
+      } catch {
+        // Some browsers/extensions/apps can send malformed cookie values.
+        // Ignore decode failures and keep the raw value so auth parsing
+        // doesn't crash unrelated requests with "URI malformed".
+      }
+
       cookies[key] = value;
       return cookies;
     }, {});
