@@ -10,7 +10,9 @@
     "server": "node server/index.js",
     "start": "node server/index.js",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "qa:install": "playwright install"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -78,6 +80,7 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
     "nodemon": "^3.1.11",
