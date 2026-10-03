@@ -15,3 +15,7 @@ traefik
 traefik/**
 *.local.yaml
 *.local.yml
+
+playwright-report/
+
+test-results/
